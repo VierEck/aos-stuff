@@ -11,6 +11,8 @@ killed you to not get a point on your side. ofc he still gets the point
 server-side though so it rly is only ur client that gets out of sync. 
 a fair price to pay for a moderation tool as this :)
 
+!! this only works on openspades !!
+
 ``/ovl`` to become a "hidden spectator". 
          use command again to leave that mode. 
 ``/ovl <player>`` to make someone else become a "hidden spectator". 
