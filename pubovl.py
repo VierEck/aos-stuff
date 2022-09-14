@@ -34,55 +34,33 @@ from pyspades import world
 def pubovl(connection, player):
     protocol = connection.protocol
     player.hidden = not player.hidden
-    
+
+    x, y, z = player.world_object.position.get()
+
+    # full compatibility
+    create_player = loaders.CreatePlayer()
+    create_player.player_id = player.player_id
+    create_player.name = player.name
+    create_player.x = x
+    create_player.y = y
+    create_player.z = z
+    create_player.weapon = player.weapon
+
     if connection.hidden:
-        change_team = loaders.ChangeTeam()
-        change_team.player_id = player.player_id
-        change_team.team = 2
-        player.send_contained(change_team)
+        create_player.team = -1
+
+        player.send_contained(create_player)
         player.send_chat("you are now using pubovl")
         protocol.irc_say('* %s is using pubovl' % player.name) #let the rest of the staff team know u r using this
     else:
-        change_team = loaders.ChangeTeam()
-        change_team.player_id = player.player_id 
-        change_team.team = player.team.id 
-        player.send_contained(change_team)
-        
-        x, y, z = player.world_object.position.get()
-        create_player = loaders.CreatePlayer()
-        create_player.player_id = player.player_id
-        create_player.name = player.name
-        create_player.x = x
-        create_player.y = y
-        create_player.z = z
-        create_player.weapon = player.weapon
         create_player.team = player.team.id
-        world_object = player.world_object
-        input_data = loaders.InputData()
-        input_data.player_id = player.player_id
-        input_data.up = world_object.up
-        input_data.down = world_object.down
-        input_data.left = world_object.left
-        input_data.right = world_object.right
-        input_data.jump = world_object.jump
-        input_data.crouch = world_object.crouch
-        input_data.sneak = world_object.sneak
-        input_data.sprint = world_object.sprint
-        set_tool = loaders.SetTool()
-        set_tool.player_id = player.player_id
-        set_tool.value = player.tool
+
         set_color = loaders.SetColor()
         set_color.player_id = player.player_id
         set_color.value = make_color(*player.color)
-        weapon_input = loaders.WeaponInput()
-        weapon_input.primary = world_object.primary_fire
-        weapon_input.secondary = world_object.secondary_fire
+
         player.send_contained(create_player, player)
-        player.send_contained(set_tool, player)
-        player.send_contained(set_color, player)
-        player.send_contained(input_data, player)
-        player.send_contained(weapon_input, player)
-        
+
         player.send_chat('you are no longer using pubovl')
         protocol.irc_say('* %s is no longer using pubovl' % player.name)
 
