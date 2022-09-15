@@ -5,13 +5,10 @@ the player you want it to use on.
 essentially you are now spectator only on ur side while you are still a 
 normal player server-side/to everyone else. 
 
-scoreboard statistics may get out of sync. whenever someone kills you 
-ovl stops the killpacket from being sent to u causing the player that 
-killed you to not get a point on your side. ofc he still gets the point 
-server-side though so it rly is only ur client that gets out of sync. 
-a fair price to pay for a moderation tool as this :)
-
-!! this only works on openspades !!
+scoreboard statistics may get out of sync. Ammo and blocks get out of 
+sync since leaving ovl refills you only client-side. this is not much of 
+a problem though since the server still keeps track of ur correct amount 
+of ammo and blocks. 
 
 ``/ovl`` to become a "hidden spectator". 
          use command again to leave that mode. 
