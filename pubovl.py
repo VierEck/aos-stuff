@@ -18,7 +18,7 @@ a fair price to pay for a moderation tool as this :)
 ``/ovl <player>`` to make someone else become a "hidden spectator". 
                   use again to make the player leave that mode. 
 
-codeauthor: VierEck., DryByte (https://github.com/DryByte)
+codeauthors: VierEck., DryByte (https://github.com/DryByte)
 '''
 
 from pyspades import contained as loaders
@@ -29,7 +29,7 @@ from pyspades.common import Vertex3, get_color, make_color
 from pyspades import world
 
 
-@command('pubovl', 'ovl')
+@command('pubovl', 'ovl', admin_only=True)
 @target_player
 def pubovl(connection, player):
     protocol = connection.protocol
