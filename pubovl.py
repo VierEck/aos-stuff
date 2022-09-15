@@ -18,7 +18,7 @@ a fair price to pay for a moderation tool as this :)
 ``/ovl <player>`` to make someone else become a "hidden spectator". 
                   use again to make the player leave that mode. 
 
-codeauthor: VierEck.
+codeauthor: VierEck., DryByte (https://github.com/DryByte)
 '''
 
 from pyspades import contained as loaders
