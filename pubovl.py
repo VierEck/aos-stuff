@@ -43,7 +43,7 @@ def pubovl(connection, player):
     create_player.z = z
     create_player.weapon = player.weapon
 
-    if connection.hidden:
+    if player.hidden:
         create_player.team = -1
 
         player.send_contained(create_player)
