@@ -1,6 +1,6 @@
 '''
 spectate players without them knowing or give someone else that ability. 
-when using pubovl the server sends a changeteam packet only to you or
+when using pubovl the server sends a create_player packet only to you or
 the player you want it to use on. 
 essentially you are now spectator only on ur side while you are still a 
 normal player server-side/to everyone else. 
