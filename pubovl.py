@@ -18,11 +18,10 @@ of ammo and blocks.
 codeauthors: VierEck., DryByte (https://github.com/DryByte)
 '''
 
+from piqueserver.commands import command, target_player
+from pyspades.common import Vertex3, make_color
+from pyspades.constants import WEAPON_TOOL
 from pyspades import contained as loaders
-from piqueserver.commands import command, get_player, target_player
-from pyspades.constants import (WEAPON_KILL, WEAPON_TOOL)
-from pyspades.team import Team
-from pyspades.common import Vertex3, get_color, make_color
 from pyspades import world
 
 
@@ -65,7 +64,7 @@ def apply_script(protocol, connection, config):
     class pubovlConnection(connection):
         hidden = False
         
-        def kill(self, by: None = None, kill_type: int = WEAPON_KILL, grenade: None = None) -> None:
+        def kill(self, by, kill_type, grenade):
             if self.hp is None:
                 return
             if self.on_kill(by, kill_type, grenade) is False:
@@ -91,8 +90,10 @@ def apply_script(protocol, connection, config):
                  self.protocol.broadcast_contained(kill_action, save=True)   
             self.world_object.dead = True
             self.respawn()
+
+            return connection.kill(self, by, kill_type, grenade)
             
-        def spawn(self, pos: None = None) -> None:
+        def spawn(self, pos):
             self.spawn_call = None
             if self.team is None:
                 return
@@ -140,11 +141,14 @@ def apply_script(protocol, connection, config):
             if not self.client_info:
                 handshake_init = loaders.HandShakeInit()
                 self.send_contained(handshake_init)
-            
-        def on_team_changed(self, old_team: Team) -> None:   #normally server rejects ur teamchange when ur in ovl cause
-            self.hidden = False                              #teamid dont align. however if an admin force switches u the
-            self.send_chat('you are no longer using pubovl') #script looses track of wether u r using ovl or not. 
-            #idk why i cant irc relay this. 
-            
+
+            return connection.spawn(self, pos)
+
+        def on_team_changed(self, old_team):                    #normally server rejects ur teamchange when ur in ovl cause
+            if self.hidden:                                     #teamid dont align. however if an admin force switches u the
+                self.send_chat('you are no longer using pubovl')#script looses track of wether u r using ovl or not. 
+                self.hidden = False                             #idk why i cant irc relay this. 
+
+            return connection.on_team_changed(self, old_team)
             
     return protocol, pubovlConnection
