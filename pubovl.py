@@ -20,7 +20,7 @@ codeauthors: VierEck., DryByte (https://github.com/DryByte)
 
 from piqueserver.commands import command, target_player
 from pyspades.common import Vertex3, make_color
-from pyspades.constants import WEAPON_TOOL
+from pyspades.constants import WEAPON_TOOL, WEAPON_KILL
 from pyspades import contained as loaders
 from pyspades import world
 
@@ -64,7 +64,7 @@ def apply_script(protocol, connection, config):
     class pubovlConnection(connection):
         hidden = False
         
-        def kill(self, by, kill_type, grenade):
+        def kill(self, by=None, kill_type=WEAPON_KILL, grenade=None):
             if self.hp is None:
                 return
             if self.on_kill(by, kill_type, grenade) is False:
@@ -93,7 +93,7 @@ def apply_script(protocol, connection, config):
 
             return connection.kill(self, by, kill_type, grenade)
             
-        def spawn(self, pos):
+        def spawn(self, pos=None):
             self.spawn_call = None
             if self.team is None:
                 return
@@ -142,7 +142,8 @@ def apply_script(protocol, connection, config):
                 handshake_init = loaders.HandShakeInit()
                 self.send_contained(handshake_init)
 
-            return connection.spawn(self, pos)
+            if not self.hidden:
+                return connection.spawn(self, pos)
 
         def on_team_changed(self, old_team):                    #normally server rejects ur teamchange when ur in ovl cause
             if self.hidden:                                     #teamid dont align. however if an admin force switches u the
