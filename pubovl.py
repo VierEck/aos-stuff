@@ -1,4 +1,5 @@
 '''
+latest version: https://github.com/VierEck/aos-scripts/blob/main/pubovl.py
 spectate players without them knowing or give someone else that ability. 
 when using pubovl the server sends a create_player packet only to you or
 the player you want it to use on. 
