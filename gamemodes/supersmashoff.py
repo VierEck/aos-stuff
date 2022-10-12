@@ -1,4 +1,5 @@
 """
+lastest version: https://github.com/VierEck/aos-scripts/blob/main/gamemodes/supersmashoff.py
 based on Morphman's gamemode "Smashoff". Super SmashOff uses Jipok's 
 charge script for inflicting knockback which looks a lot smoother. 
 
