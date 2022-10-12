@@ -23,6 +23,7 @@ from pyspades.common import Vertex3, make_color
 from pyspades.constants import WEAPON_TOOL, WEAPON_KILL
 from pyspades import contained as loaders
 from pyspades import world
+from piqueserver.scheduler import Scheduler
 
 
 @command('pubovl', 'ovl', admin_only=True)
@@ -56,6 +57,11 @@ def pubovl(connection, player):
         set_color.value = make_color(*player.color)
 
         player.send_contained(create_player, player)
+        
+        if player.world_object.dead:                              #without this u could run around even though u r supposed to be
+            schedule = Scheduler(player.protocol)                 #dead. this could be abused for cheats so we dont allow this. 
+            schedule.call_later(0.1, player.spawn_dead_after_ovl) #need call_later cause otherwise u die as spectator which means u
+                                                                  #dont die at all. 
 
         player.send_chat('you are no longer using pubovl')
         protocol.irc_say('* %s is no longer using pubovl' % player.name)
@@ -63,6 +69,14 @@ def pubovl(connection, player):
 def apply_script(protocol, connection, config):
     class pubovlConnection(connection):
         hidden = False
+        
+        def spawn_dead_after_ovl(self):
+            kill_action = loaders.KillAction()
+            kill_action.killer_id = self.player_id
+            kill_action.player_id = self.player_id
+            kill_action.kill_type = 2
+            kill_action.respawn_time = self.get_respawn_time() #not actual spawn time, maybe fix this later. 
+            self.send_contained(kill_action)
         
         def kill(self, by=None, kill_type=WEAPON_KILL, grenade=None):
             if self.hp is None:
