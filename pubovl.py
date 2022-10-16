@@ -1,9 +1,12 @@
 '''
+latest version: https://github.com/VierEck/aos-scripts/blob/main/pubovl.py
+
 spectate players without them knowing or give someone else that ability. 
 when using pubovl the server sends a create_player packet only to you or
 the player you want it to use on. 
 essentially you are now spectator only on ur side while you are still a 
 normal player server-side/to everyone else. 
+if u r using externalovl then u r completely invisible to everyone else!
 
 scoreboard statistics may get out of sync. Ammo and blocks get out of 
 sync since leaving ovl refills you only client-side. this is not much of 
@@ -14,6 +17,8 @@ of ammo and blocks.
          use command again to leave that mode. 
 ``/ovl <player>`` to make someone else become a "hidden spectator". 
                   use again to make the player leave that mode. 
+``/exovl <ip address>`` use from console or somewhere else. to fake-join
+                        as a spectator on ur side. 
 
 codeauthors: VierEck., DryByte (https://github.com/DryByte)
 '''
@@ -69,7 +74,7 @@ def pubovl(connection, player):
         
 
 @command('externalovl', 'exovl', admin_only=True) #external~outside: "outside the game". player is connected but not joined to the game
-def exovl(connection, ip):                        #                  yet. in this state, since he neither appears on leaderboard nor yet
+def exovl(connection, ip):                        #                  yet. in this state, since he neither appears on scoreboard nor yet
     protocol = connection.protocol                #                  spawned, he is completely invisible to everyone like he didnt exist. 
     ip_command = ip_address(str(ip))
     for player in protocol.connections.values():
