@@ -1,5 +1,4 @@
 '''
-latest version: https://github.com/VierEck/aos-scripts/blob/main/pubovl.py
 spectate players without them knowing or give someone else that ability. 
 when using pubovl the server sends a create_player packet only to you or
 the player you want it to use on. 
@@ -19,12 +18,13 @@ of ammo and blocks.
 codeauthors: VierEck., DryByte (https://github.com/DryByte)
 '''
 
-from piqueserver.commands import command, target_player
+from piqueserver.commands import command, target_player, get_player
 from pyspades.common import Vertex3, make_color
 from pyspades.constants import WEAPON_TOOL, WEAPON_KILL
 from pyspades import contained as loaders
 from pyspades import world
 from piqueserver.scheduler import Scheduler
+from ipaddress import AddressValueError, IPv4Address, ip_address
 
 
 @command('pubovl', 'ovl', admin_only=True)
@@ -66,6 +66,29 @@ def pubovl(connection, player):
 
         player.send_chat('you are no longer using pubovl')
         protocol.irc_say('* %s is no longer using pubovl' % player.name)
+        
+
+@command('externalovl', 'exovl', admin_only=True) #external~outside: "outside the game". player is connected but not joined to the game
+def exovl(connection, ip):                        #                  yet. in this state, since he neither appears on leaderboard nor yet
+    protocol = connection.protocol                #                  spawned, he is completely invisible to everyone like he didnt exist. 
+    ip_command = ip_address(str(ip))
+    for player in protocol.connections.values():
+        ip_player = ip_address(player.address[0])
+        if player.name is None and ip_player == ip_command:
+            x = 256 # spawn them in the middle of the map instead of the left upper corner. 
+            y = 256
+            z = 0
+            create_player = loaders.CreatePlayer()
+            create_player.player_id = player.player_id
+            create_player.name = "external Deuce" #server doesnt know ur name yet, dont worry, when u rly join u get ur actual name back. 
+            create_player.x = x
+            create_player.y = y
+            create_player.z = z
+            create_player.weapon = 0
+            create_player.team = -1
+            player.send_contained(create_player)
+            player.send_chat("you are now using externalovl")
+            protocol.irc_say('*%s is using externalovl' % ip)
 
 def apply_script(protocol, connection, config):
     class pubovlConnection(connection):
