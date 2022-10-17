@@ -1,6 +1,4 @@
 """
-lastest version: https://github.com/VierEck/aos-scripts/blob/main/gamemodes/supersmashoff.py
-I just realized u will need python 3.10
 based on Morphman's gamemode "Smashoff". Super SmashOff uses Jipok's 
 charge script for inflicting knockback which looks a lot smoother. 
 
@@ -62,7 +60,6 @@ smash_config = config.section('supersmashoff')
 @command('smash') #i think this "/command <command> <value>" format is good so that commands from other scripts wont overlap
 def smashplayercommands(connection, command, player_=None):
     protocol = connection.protocol
-    schedule = Scheduler(protocol)
     player = None
     if player_ is not None:
         player = get_player(protocol, player_)
@@ -217,12 +214,6 @@ def apply_script(protocol, connection, config):
                 if self.world_object.velocity.length() <= 1.3: #continue updating pos till speed decreased to max sprint speed. 
                     self.charging = False
                     self.killer = None #reset ur saved killer if ur not being knocked around
-                self.charge_allowed = False #charge not allowed if not airborne. charges r treated like double jumps in this gamemode
-                self.charge_again = self.protocol.charge_limit
-            else: 
-                if self.world_object.position.z < 60: #no charge allowed when on or very near water. otherwise they could jump out of it
-                    self.charge_allowed = True        #and circumvent death. thats why its better to build rather high maps btw.
-                    
             if self.charge_again == 0:
                 self.charge_allowed = False
                 
@@ -350,10 +341,15 @@ def apply_script(protocol, connection, config):
         smash_spade = smash_config.option('spadedamage', 30).get()
         smash_nade = smash_config.option('nadedamage', 20).get()
         
-        def on_world_update(self): #waterdamage
+        def on_world_update(self): 
             for player in self.players.values():
-                if player.world_object.position.z > 60 and not player.world_object.dead:
-                    player.kill_player()
+                if player.world_object.velocity.z == 0.0:
+                    player.charge_allowed = False #charge not allowed if not airborne. charges r treated like double jumps in this gamemode
+                    player.charge_again = player.protocol.charge_limit
+                else: 
+                    player.charge_allowed = True        #and circumvent death. thats why its better to build rather high maps btw.
+                if player.world_object.position.z > 60 and not player.world_object.dead and not None:
+                    player.kill_player() #waterdamage
             return protocol.on_world_update(self)
 
         async def charge_loop(self):
