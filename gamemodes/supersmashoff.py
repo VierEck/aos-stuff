@@ -347,7 +347,7 @@ def apply_script(protocol, connection, config):
                     player.charge_allowed = False #charge not allowed if not airborne. charges r treated like double jumps in this gamemode
                     player.charge_again = player.protocol.charge_limit
                 else: 
-                    player.charge_allowed = True        #and circumvent death. thats why its better to build rather high maps btw.
+                    player.charge_allowed = True
                 if player.world_object.position.z > 60 and not player.world_object.dead and not None:
                     player.kill_player() #waterdamage
             return protocol.on_world_update(self)
