@@ -125,6 +125,10 @@ def apply_script(protocol, connection, config):
             if self.recording:
                 if self.mapdata is not None:
                     self.write_map() #maybe handle this somewhere else?
+                if self.record_length is not None:
+                    if self.record_length <= (time() - self.start_time):
+                        self.end_recording()
+                        self.irc_say('* demo recording turned OFF')
             return protocol.on_world_update(self)
         
         def on_connect(self, peer):
@@ -173,10 +177,6 @@ def apply_script(protocol, connection, config):
         def broadcast_contained(self, contained, unsequenced=False, sender=None, team=None, save=False, rule=None):
             if self.write_broadcast:
                 self.write_pack(contained)
-            if self.record_length is not None and self.recording:
-                if self.record_length <= (time() - self.start_time):
-                    self.end_recording()
-                    self.irc_say('* demo recording turned OFF')
             return protocol.broadcast_contained(self, contained, unsequenced, sender, team, save, rule)
         
         def write_map(self, data: Optional[ProgressiveMapGenerator] = None) -> None:
