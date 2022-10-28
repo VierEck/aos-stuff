@@ -61,12 +61,14 @@ def get_replays_dir(connection):
     return (os.path.join(config.config_dir, 'replays'))
 
 @command('replay', 'rpy',admin_only=True)
-def replay(connection, value):
+def replay(connection, value, time_length=None):
     protocol = connection.protocol
     value = value.lower()
     if value == 'on':
         if not protocol.recording:
-            if len(protocol.connections) >= 1: # 
+            if len(protocol.connections) >= 1:
+                if time_length is not None:
+                    protocol.record_length = int(time_length)
                 protocol.start_recording()
                 if connection in connection.protocol.players:
                     connection.send_chat('demo recording turned ON')
@@ -111,11 +113,13 @@ def apply_script(protocol, connection, config):
         def on_disconnect(self):
             if len(self.protocol.connections) <= 2 and self.protocol.recording:
                 self.protocol.end_recording()
+                self.protocol.irc_say('* demo recording turned OFF')
             return connection.on_disconnect(self)
               
     class replayprotocol(protocol):
         recording = False
         write_broadcast = False
+        record_length = None
         
         def on_world_update(self):
             if self.recording:
@@ -126,10 +130,11 @@ def apply_script(protocol, connection, config):
         def on_connect(self, peer):
             if auto_replay and len(self.connections) >= 1 and not self.recording:
                 self.start_recording()
+                self.irc_say('* demo recording turned ON')
             return protocol.on_connect(self, peer)
         
         def on_map_change(self, map_):
-            if auto_replay and len(self.connections) >= 1 and not self.recording: #2
+            if auto_replay and len(self.connections) >= 2 and not self.recording: 
                 self.start_recording()
                 self.irc_say('* demo recording turned ON')
             return protocol.on_map_change(self, map_)
@@ -168,6 +173,10 @@ def apply_script(protocol, connection, config):
         def broadcast_contained(self, contained, unsequenced=False, sender=None, team=None, save=False, rule=None):
             if self.write_broadcast:
                 self.write_pack(contained)
+            if self.record_length is not None and self.recording:
+                if self.record_length <= (time() - self.start_time):
+                    self.end_recording()
+                    self.irc_say('* demo recording turned OFF')
             return protocol.broadcast_contained(self, contained, unsequenced, sender, team, save, rule)
         
         def write_map(self, data: Optional[ProgressiveMapGenerator] = None) -> None:
