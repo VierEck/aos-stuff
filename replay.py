@@ -143,7 +143,7 @@ def apply_script(protocol, connection, config):
                 os.mkdir(os.path.join(get_replays_dir(connection)))
             time_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
             map_name = self.map_info.rot_info.name + '_'
-            self.replay_filename = 'rpy_' + map_name + time_str
+            self.replay_filename = 'rpy_' + map_name + time_str + '.demo'
             self.replayfile = os.path.join(get_replays_dir(connection), self.replay_filename)
             self.replay_file = open(self.replayfile, 'wb')
             self.replay_file.write(struct.pack('BB', FILE_VERSION, version))
