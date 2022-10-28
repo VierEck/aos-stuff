@@ -1,4 +1,6 @@
 '''
+latest version of replay.py: https://github.com/VierEck/aos-scripts/blob/main/replay.py
+
 original aos_replay by BR: (https://github.com/BR-/aos_replay)
 
 recordings resulting from this script r compatible with BR's
