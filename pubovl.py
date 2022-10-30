@@ -126,9 +126,7 @@ def apply_script(protocol, connection, config):
                 by.add_score(1)
             kill_action.respawn_time = self.get_respawn_time() + 1
             if self.hidden: 
-                for players in self.protocol.players.values():  #dont send kill packet to user of pubovl otherwise
-                    if players.player_id is not self.player_id: #it immediately kicks them out of spectator mode
-                        players.send_contained(kill_action)
+                self.protocol.broadcast_contained(kill_action, sender=self, save=True) 
             else:
                  self.protocol.broadcast_contained(kill_action, save=True)   
             self.world_object.dead = True
@@ -173,9 +171,7 @@ def apply_script(protocol, connection, config):
                 self.send_contained(create_player)
             else:
                 if self.hidden: 
-                    for players in self.protocol.players.values():
-                        if players.player_id is not self.player_id:
-                            players.send_contained(create_player)
+                    self.protocol.broadcast_contained(create_player, sender=self,save=True)
                 else:
                     self.protocol.broadcast_contained(create_player, save=True)
             if not spectator:
