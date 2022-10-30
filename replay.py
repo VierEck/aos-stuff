@@ -120,7 +120,6 @@ def apply_script(protocol, connection, config):
             if auto_replay and len(self.protocol.connections) == 2 and not self.protocol.recording:
                 self.protocol.start_recording()
                 self.protocol.irc_say('* demo recording turned ON')
-                self.protocol.broadcast_chat('test ON')
             return connection.on_join(self)
               
     class replayprotocol(protocol):
