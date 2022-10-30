@@ -115,6 +115,13 @@ def apply_script(protocol, connection, config):
                 self.protocol.end_recording()
                 self.protocol.irc_say('* demo recording turned OFF')
             return connection.on_disconnect(self)
+        
+        def on_join(self):
+            if auto_replay and len(self.protocol.connections) == 2 and not self.protocol.recording:
+                self.protocol.start_recording()
+                self.protocol.irc_say('* demo recording turned ON')
+                self.protocol.broadcast_chat('test ON')
+            return connection.on_join(self)
               
     class replayprotocol(protocol):
         recording = False
@@ -128,14 +135,9 @@ def apply_script(protocol, connection, config):
                 if self.record_length is not None:
                     if self.record_length <= (time() - self.start_time):
                         self.end_recording()
+                        self.record_length = None
                         self.irc_say('* demo recording turned OFF')
             return protocol.on_world_update(self)
-        
-        def on_connect(self, peer):
-            if auto_replay and len(self.connections) >= 1 and not self.recording:
-                self.start_recording()
-                self.irc_say('* demo recording turned ON')
-            return protocol.on_connect(self, peer)
         
         def on_map_change(self, map_):
             if auto_replay and len(self.connections) >= 2 and not self.recording: 
