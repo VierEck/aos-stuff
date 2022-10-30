@@ -117,7 +117,7 @@ def apply_script(protocol, connection, config):
             return connection.on_disconnect(self)
         
         def on_join(self):
-            if auto_replay and len(self.protocol.connections) == 2 and not self.protocol.recording:
+            if auto_replay and len(self.protocol.connections) >= 2 and not self.protocol.recording:
                 self.protocol.start_recording()
                 self.protocol.irc_say('* demo recording turned ON')
             return connection.on_join(self)
