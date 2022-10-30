@@ -215,10 +215,7 @@ def apply_script(protocol, connection, config):
                 existing_player.color = make_color(*player.color)
                 self.write_pack(existing_player)
                
-            if len(self.connections) <= 30:              #this is not a solution. 
-                self.recorder_id = self.player_ids.pop() #the only real solution i can figure out is to always have recorder_id
-            else:                                        #set to greater than 31, but then having a modified client that can
-                self.recorder_id = 33                    #handle it as local player id when reviewing the resulting recording. 
+            self.recorder_id = 33 #u will need a modified client that will accept this!
                     
             blue = self.blue_team
             green = self.green_team
