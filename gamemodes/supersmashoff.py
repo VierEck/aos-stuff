@@ -168,6 +168,7 @@ def apply_script(protocol, connection, config):
         sneak = False
         charging = False
         charge_allowed = False
+        anim_state = 0
         last_charge_time = 0
         last_shotty_time = 0
         dmgpercent = 0 #ur so called "health". like in smash bros its value goes up the more damage u take
@@ -184,7 +185,7 @@ def apply_script(protocol, connection, config):
 
         def on_login(self, name):
             connection.on_login(self, name)
-            self.protocol.charge_list.append(self)
+            self.protocol.smasher_list.append(self)
             self.last_charge_time = 0
             self.send_chat("Knock your opponents into water to kill him!")
             self.send_chat("There is a limit of %.0f charges per jump" % self.protocol.charge_limit)
@@ -211,16 +212,24 @@ def apply_script(protocol, connection, config):
             self.respawn()
             self.killer = None
             self.dmgpercent = 0
+        
+        def on_walk_update(self, up: bool, down: bool, left: bool, right: bool) -> None:
+            if not up and not left and not right and not down:
+                self.anim_state = 0 #standing
+            return connection.on_walk_update(self, up, down, left, right)
 
         def on_animation_update(self, jump, crouch, sneak, sprint):
-            if self.world_object.velocity.z == 0.0:
-                if self.world_object.velocity.length() <= 1.3: #continue updating pos till speed decreased to max sprint speed. 
-                    self.charging = False
-                    self.killer = None #reset ur saved killer if ur not being knocked around
-            if self.charge_again == 0:
-                self.charge_allowed = False
-                
-            if sneak and not self.sneak and self in self.protocol.charge_list:
+            if sprint:
+                self.anim_state = 2
+            elif crouch:
+                self.anim_state = 3
+            elif sneak:
+                self.anim_state = 4
+            elif jump:
+                self.anim_state = 0
+            else: #walking
+                self.anim_state = 1 
+            if sneak and not self.sneak and self in self.protocol.smasher_list:
                 if (time.monotonic() >= self.last_charge_time + self.protocol.charge_cooldown) and self.charge_allowed:
                     vel = self.world_object.velocity
                     aim = self.world_object.orientation
@@ -309,16 +318,10 @@ def apply_script(protocol, connection, config):
             totaldamage = self.get_damage(self.weapon_object.id, _type, hit_amount)
             self.get_knockback(totaldamage, player, grenade, self.weapon_object.id)
             self.update_player_dmg(player, totaldamage)
-            return False
-            
-        def on_fall(self, damage):
-            return False
+            return 
 
     class SmashProtocol(protocol):
         game_mode = CTF_MODE
-    
-        charge_list = []
-        charge_loop_task = None
         
         #on the fly ingame configuration
         smash_dmg_limit = smash_config.option('damagelimit', 300).get()
@@ -344,35 +347,72 @@ def apply_script(protocol, connection, config):
         smash_spade = smash_config.option('spadedamage', 30).get()
         smash_nade = smash_config.option('nadedamage', 20).get()
         
-        def on_world_update(self): 
-            for player in self.players.values():
-                if player.world_object.velocity.z == 0.0:
-                    player.charge_allowed = False #charge not allowed if not airborne. charges r treated like double jumps in this gamemode
-                    player.charge_again = player.protocol.charge_limit
-                else: 
-                    player.charge_allowed = True
-                if player.world_object.position.z > 60 and not player.world_object.dead and not None:
-                    player.kill_player() #waterdamage
-            return protocol.on_world_update(self)
-
-        async def charge_loop(self):
+        smasher_list = []
+        smash_loop_task = None
+        last_kill_update = time.monotonic()
+        last_condition_update = time.monotonic()
+        last_charge_update = time.monotonic()
+        
+        async def smash_loop(self):
             while True:
-                for player in self.charge_list:
+                for player in self.smasher_list:
                     if player.world_object is None:
                         continue
+                    #charge condition update 20 times a sec
+                    if time.monotonic() - self.last_condition_update >= 1/20: 
+                        self.last_condition_update = self.world_time
+                        if player.world_object.velocity.z == 0.0:
+                            player.charge_allowed = False
+                            player.charge_again = player.protocol.charge_limit
+                            match player.anim_state:
+                                case 0:#standing
+                                    if player.world_object.velocity.length() <= 0.0:
+                                        player.charging = False
+                                        player.killer = None
+                                case 1:#walking
+                                    if player.world_object.velocity.length() <= 0.25:
+                                        player.charging = False
+                                        player.killer = None
+                                case 2:#sprint
+                                    if player.world_object.velocity.length() <= 0.3250:
+                                        player.charging = False
+                                        player.killer = None
+                                case 3:#crouch
+                                    if player.world_object.velocity.length() <= 0.075:
+                                        player.charging = False
+                                        player.killer = None
+                                case 4:#sneak
+                                    if player.world_object.velocity.length() <= 0.125:
+                                        player.charging = False
+                                        player.killer = None
+                                case _:#idk lmao
+                                    if player.world_object.velocity.length() <= 0.0:
+                                        player.charging = False
+                                        player.killer = None
+                        else: 
+                            player.charge_allowed = True
+                        if player.charge_again == 0:
+                            player.charge_allowed = False
+                    #waterdamage update 5 times a sec
+                    if time.monotonic() - self.last_kill_update >= 1/5:
+                        self.last_kill_update = self.world_time
+                        if player.world_object.position.z > 60 and not player.world_object.dead:
+                            player.kill_player()
+                    #charge position update 120 times a sec
                     if player.charging:
                         player.set_location()
-                await asyncio.sleep(1/180) # 60 * 3
+                await asyncio.sleep(1/120)
 
         def on_map_change(self, map_):
-            self.user_blocks = set() #disable map block destruction
-            if self.charge_loop_task is None:
-                self.charge_loop_task = asyncio.ensure_future(self.charge_loop())
+            if self.smash_loop_task is None:
+                self.smash_loop_task = asyncio.ensure_future(self.smash_loop())
+            self.user_blocks_only = False
+            self.fall_damage = False
             return protocol.on_map_change(self, map_)
 
         def on_map_leave(self):
-            self.charge_loop_task.cancel()
-            self.charge_loop_task = None
+            self.smash_loop_task.cancel()
+            self.smash_loop_task = None
             protocol.on_map_leave(self)
             
     return SmashProtocol, SmashConnection,
