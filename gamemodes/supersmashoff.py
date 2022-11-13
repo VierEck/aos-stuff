@@ -406,7 +406,7 @@ def apply_script(protocol, connection, config):
         def on_map_change(self, map_):
             if self.smash_loop_task is None:
                 self.smash_loop_task = asyncio.ensure_future(self.smash_loop())
-            self.user_blocks_only = False
+            self.user_blocks_only = True
             self.fall_damage = False
             return protocol.on_map_change(self, map_)
 
