@@ -318,7 +318,7 @@ def apply_script(protocol, connection, config):
             totaldamage = self.get_damage(self.weapon_object.id, _type, hit_amount)
             self.get_knockback(totaldamage, player, grenade, self.weapon_object.id)
             self.update_player_dmg(player, totaldamage)
-            return 
+            return False
 
     class SmashProtocol(protocol):
         game_mode = CTF_MODE
