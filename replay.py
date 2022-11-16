@@ -70,41 +70,18 @@ def replay(connection, value, time_length=None):
                 if time_length is not None:
                     protocol.record_length = int(time_length)
                 protocol.start_recording()
-                if connection in connection.protocol.players:
-                    connection.send_chat('demo recording turned ON')
-                    protocol.irc_say('* %s turned demo recording ON' % connection.name)
-                else:
-                    protocol.irc_say('* demo recording turned ON')
-                    return ('demo recording turned ON')
+                return ('demo recording turned ON')
             else:
-                if connection in connection.protocol.players:
-                    connection.send_chat('not enough players')
-                else:
-                    protocol.irc_say('* not enough players')
-                    return ('not enough players')
+                return ('not enough players')
         else:
-            if connection in connection.protocol.players:
-                connection.send_chat('recording is already ON')
-            else:
-                protocol.irc_say('* recording is already ON')
-                return ('recording is already ON')
+            return ('recording is already ON')
     elif value == 'off':
         if protocol.recording:
             protocol.end_recording()
-            if connection in connection.protocol.players:
-                connection.send_chat('demo recording turned OFF')
-                protocol.irc_say('* %s turned demo recording OFF' % connection.name)
-            else:
-                protocol.irc_say('* demo recording turned OFF')
-                return ('demo recording turned OFF')
+            return ('demo recording turned OFF')
         else:
-            if connection in connection.protocol.players:
-                connection.send_chat('recording is already OFF')
-            else:
-                protocol.irc_say('* recording is already OFF')
-                return ('recording is already OFF')
+            return ('recording is already OFF')
     else:
-        connection.send_chat('Invalid value. type ON or OFF')
         return 'Invalid value. type ON or OFF' #we want explicit command use. 
         
 def apply_script(protocol, connection, config):
