@@ -50,9 +50,11 @@ from pyspades.mapgenerator import ProgressiveMapGenerator
 from typing import Optional
 from pyspades.constants import CTF_MODE, TC_MODE
 from pyspades.common import Vertex3, make_color
+import asyncio
 
 replay_config = config.section('replay')
 auto_replay = replay_config.option('autorecording', False).get()
+rec_ups = replay_config.option('recorded_ups', 20).get()
 
 FILE_VERSION = 1
 version = 3
@@ -103,17 +105,27 @@ def apply_script(protocol, connection, config):
         recording = False
         write_broadcast = False
         record_length = None
+        record_loop_task = None
+        last_mapdata_written = time()
+        last_length_check = time()
         
-        def on_world_update(self):
-            if self.recording:
-                if self.mapdata is not None:
-                    self.write_map() #maybe handle this somewhere else?
-                if self.record_length is not None:
-                    if self.record_length <= (time() - self.start_time):
-                        self.end_recording()
-                        self.record_length = None
-                        self.irc_say('* demo recording turned OFF')
-            return protocol.on_world_update(self)
+        async def record_loop(self):
+            while True:
+                if self.recording:
+                    if self.mapdata is not None:
+                        if time() - self.last_mapdata_written >= 1/2: 
+                            self.write_map()
+                            self.last_mapdata_written = self.world_time
+                    if self.record_length is not None:
+                        if time() - self.last_length_check >= 1:
+                            if self.record_length <= (time() - self.start_time):
+                                self.end_recording()
+                                self.record_length = None
+                                self.irc_say('* demo recording turned OFF')
+                            self.last_length_check = self.world_time
+                    if self.write_broadcast:
+                        self.write_ups()
+                await asyncio.sleep(1/rec_ups)
         
         def on_map_change(self, map_):
             if auto_replay and len(self.connections) >= 2 and not self.recording: 
@@ -137,10 +149,13 @@ def apply_script(protocol, connection, config):
             self.replay_file = open(self.replayfile, 'wb')
             self.replay_file.write(struct.pack('BB', FILE_VERSION, version))
             self.start_time = time()
+            self.record_loop_task = asyncio.ensure_future(self.record_loop())
             self.write_map(ProgressiveMapGenerator(self.map))
             self.recording = True
         
         def end_recording(self):
+            self.record_loop_task.cancel()
+            self.record_loop_task = None
             self.write_broadcast = False
             self.recording = False
             self.replay_file.close()
@@ -153,10 +168,34 @@ def apply_script(protocol, connection, config):
             self.replay_file.write(data)
         
         def broadcast_contained(self, contained, unsequenced=False, sender=None, team=None, save=False, rule=None):
-            if self.write_broadcast:
+            if self.write_broadcast and contained.id != 2:
                 self.write_pack(contained)
             return protocol.broadcast_contained(self, contained, unsequenced, sender, team, save, rule)
-        
+            
+        def write_ups(self):
+            if not len(self.players):
+                return
+            items = []
+            highest_player_id = max(self.players)
+            for i in range(highest_player_id + 1):
+                position = orientation = None
+                try:
+                    player = self.players[i]
+                    if (not player.filter_visibility_data and
+                            not player.team.spectator):
+                        world_object = player.world_object
+                        position = world_object.position.get()
+                        orientation = world_object.orientation.get()
+                except (KeyError, TypeError, AttributeError):
+                    pass
+                if position is None:
+                    position = (0.0, 0.0, 0.0)
+                    orientation = (0.0, 0.0, 0.0)
+                items.append((position, orientation))
+            world_update = loaders.WorldUpdate()
+            world_update.items = items[:highest_player_id+1]
+            self.write_pack(world_update)
+                
         def write_map(self, data: Optional[ProgressiveMapGenerator] = None) -> None:
             if data is not None:
                 self.mapdata = data
