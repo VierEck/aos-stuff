@@ -71,6 +71,7 @@ def replay(connection, value, time_length=None):
             if len(protocol.connections) >= 1:
                 if time_length is not None:
                     protocol.record_length = int(time_length)
+                    protocol.player_using_length = connection
                     chat = 'demo recording turned ON for %.f seconds' % protocol.record_length
                 else:
                     chat = 'demo recording turned ON'
@@ -111,6 +112,7 @@ def apply_script(protocol, connection, config):
         record_loop_task = None
         last_mapdata_written = time()
         last_length_check = time()
+        player_using_length = None
         
         async def record_loop(self):
             while True:
@@ -123,8 +125,9 @@ def apply_script(protocol, connection, config):
                         if time() - self.last_length_check >= 1:
                             if self.record_length <= (time() - self.start_time):
                                 self.end_recording()
+                                self.player_using_length.send_chat('demo recording has turned OFF after %.f seconds' % self.record_length)
+                                self.irc_say('* demo recording has turned OFF after %.f seconds' % self.record_length)
                                 self.record_length = None
-                                self.irc_say('* demo recording turned OFF')
                             self.last_length_check = self.world_time
                     if self.write_broadcast:
                         self.write_ups()
