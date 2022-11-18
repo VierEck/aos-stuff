@@ -96,13 +96,13 @@ def apply_script(protocol, connection, config):
         def on_disconnect(self):
             if len(self.protocol.connections) <= 2 and self.protocol.recording:
                 self.protocol.end_recording()
-                self.protocol.irc_say('* demo recording turned OFF')
+                self.protocol.irc_say('* demo recording turned OFF. not enough players')
             return connection.on_disconnect(self)
         
         def on_join(self):
             if auto_replay and len(self.protocol.connections) >= 2 and not self.protocol.recording:
                 self.protocol.start_recording()
-                self.protocol.irc_say('* demo recording turned ON')
+                self.protocol.irc_say('* demo recording turned ON. there are enough players now')
             return connection.on_join(self)
               
     class replayprotocol(protocol):
@@ -136,13 +136,13 @@ def apply_script(protocol, connection, config):
         def on_map_change(self, map_):
             if auto_replay and len(self.connections) >= 2 and not self.recording: 
                 self.start_recording()
-                self.irc_say('* demo recording turned ON')
+                self.irc_say('* demo recording turned ON. there are enough players on map start')
             return protocol.on_map_change(self, map_)
         
         def on_map_leave(self):
             if self.recording:
                 self.end_recording()
-                self.irc_say('* demo recording turned OFF')
+                self.irc_say('* demo recording turned OFF. map ended')
             protocol.on_map_leave(self)
         
         def start_recording(self):
