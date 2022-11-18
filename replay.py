@@ -33,6 +33,7 @@ there r enough players.
 config.toml copypaste template:
 [replay]
 autorecording = false #change this to true if u always want to record
+recorded_ups = 20
 
 codeauthor: VierEck.
 '''
