@@ -64,30 +64,26 @@ def get_replays_dir(connection):
 
 @command('replay', 'rpy',admin_only=True)
 def replay(connection, value, time_length=None):
-    protocol = connection.protocol
+    p = connection.protocol
     value = value.lower()
+    msg = 'Invalid value. type ON or OFF' #we want explicit command use. 
     if value == 'on':
-        if not protocol.recording:
-            if len(protocol.connections) >= 1:
+        msg = 'recording is already ON'
+        if not p.recording:
+            msg = 'not enough players'
+            if len(p.connections) >= 1:
+                msg = 'demo recording turned ON'
                 if time_length is not None:
-                    protocol.record_length = int(time_length)
-                    chat = 'demo recording turned ON for %.f seconds' % protocol.record_length
-                else:
-                    chat = 'demo recording turned ON'
-                protocol.start_recording()
-                return (chat)
-            else:
-                return ('not enough players')
-        else:
-            return ('recording is already ON')
+                    p.record_length = int(time_length)
+                    msg = 'demo recording turned ON for %.f seconds' % p.record_length
+                p.start_recording()
     elif value == 'off':
-        if protocol.recording:
-            protocol.end_recording()
-            return ('demo recording turned OFF')
-        else:
-            return ('recording is already OFF')
-    else:
-        return 'Invalid value. type ON or OFF' #we want explicit command use. 
+        msg = 'recording is already OFF'
+        if p.recording:
+            p.end_recording()
+            msg = 'demo recording turned OFF'
+    p.irc_say(msg)
+    return msg
         
 def apply_script(protocol, connection, config):
 
