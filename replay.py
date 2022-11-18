@@ -71,8 +71,11 @@ def replay(connection, value, time_length=None):
             if len(protocol.connections) >= 1:
                 if time_length is not None:
                     protocol.record_length = int(time_length)
+                    chat = 'demo recording turned ON for %.f seconds' % protocol.record_length
+                else:
+                    chat = 'demo recording turned ON'
                 protocol.start_recording()
-                return ('demo recording turned ON')
+                return (chat)
             else:
                 return ('not enough players')
         else:
