@@ -114,16 +114,16 @@ def apply_script(protocol, connection, config):
             while True:
                 if self.recording:
                     if self.mapdata is not None:
-                        if time() - self.last_mapdata_written >= 1/2: 
+                        if time() - self.last_mapdata_written >= 1/4: 
                             self.write_map()
-                            self.last_mapdata_written = self.world_time
+                            self.last_mapdata_written = time()
                     if self.record_length is not None:
                         if time() - self.last_length_check >= 1:
                             if self.record_length <= (time() - self.start_time):
                                 self.end_recording()
                                 self.irc_say('* demo recording has turned OFF after %.f seconds' % self.record_length)
                                 self.record_length = None
-                            self.last_length_check = self.world_time
+                            self.last_length_check = time()
                     if self.write_broadcast:
                         self.write_ups()
                 await asyncio.sleep(1/rec_ups)
