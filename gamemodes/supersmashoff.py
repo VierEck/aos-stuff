@@ -1,5 +1,10 @@
 """
 lastest version: https://github.com/VierEck/aos-scripts/blob/main/gamemodes/supersmashoff.py
+LICENSE: GPL-3.0
+codeauthor: VierEck.
+codeauthor of original charge script: Jipok (https://github.com/piqueserver/piqueserver-extras/blob/master/scripts/charge.py)
+codeauthor of original smashoff gamemode: Dr.Morphman (https://aloha.pk/t/smashoff/13723/3)
+
 I just realized u will need python 3.10
 
 based on Morphman's gamemode "Smashoff". Super SmashOff uses Jipok's 
@@ -43,11 +48,6 @@ shotgunlimb = 2
 spadedamage = 30 #strongest weapon. reward dynamic high risk close combat
 nadedamage = 20 #maybe surprisingy weak to some, but splash damage 
                 #makes more than up for it imo
-
-
-codeauthor: VierEck.
-codeauthor of original charge script: Jipok (https://github.com/piqueserver/piqueserver-extras/blob/master/scripts/charge.py)
-codeauthor of original smashoff gamemode: Dr.Morphman (https://aloha.pk/t/smashoff/13723/3)
 """
 
 import time

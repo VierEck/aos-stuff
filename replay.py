@@ -1,5 +1,7 @@
 '''
 latest version of replay.py: https://github.com/VierEck/aos-scripts/blob/main/replay.py
+LICENSE: GPL-3.0
+codeauthor: VierEck.
 
 original aos_replay by BR: (https://github.com/BR-/aos_replay)
 
@@ -34,8 +36,6 @@ config.toml copypaste template:
 [replay]
 autorecording = false #change this to true if u always want to record
 recorded_ups = 20
-
-codeauthor: VierEck.
 '''
 
 from piqueserver.commands import command

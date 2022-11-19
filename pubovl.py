@@ -1,5 +1,7 @@
 '''
 latest version: https://github.com/VierEck/aos-scripts/blob/main/pubovl.py
+LICENSE: GPL-3.0
+codeauthors: VierEck., DryByte (https://github.com/DryByte)
 
 spectate players without them knowing or give someone else that ability. 
 when using pubovl the server sends a create_player packet only to you or
@@ -19,8 +21,6 @@ of ammo and blocks.
                   use again to make the player leave that mode. 
 ``/exovl <ip address>`` use from console or somewhere else. to fake-join
                         as a spectator on ur side. 
-
-codeauthors: VierEck., DryByte (https://github.com/DryByte)
 '''
 
 from piqueserver.commands import command, target_player, get_player
