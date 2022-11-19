@@ -50,7 +50,7 @@ import enet
 from pyspades.mapgenerator import ProgressiveMapGenerator
 from typing import Optional
 from pyspades.constants import CTF_MODE, TC_MODE
-from pyspades.common import Vertex3, make_color
+from pyspades.common import make_color
 import asyncio
 
 replay_config = config.section('replay')
