@@ -89,7 +89,6 @@ def replay(connection, value, time_length=None):
     return msg
         
 def apply_script(protocol, connection, config):
-
     class replayconnection(connection):
         def on_disconnect(self):
             if len(self.protocol.connections) <= 2 and self.protocol.recording:
@@ -144,9 +143,9 @@ def apply_script(protocol, connection, config):
         def start_recording(self):
             if not os.path.exists(get_replays_dir(connection)):
                 os.mkdir(os.path.join(get_replays_dir(connection)))
-            time_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-            map_name = self.map_info.rot_info.name + '_'
-            self.replay_filename = 'rpy_' + map_name + time_str + '.demo'
+            time_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S_')
+            map_name = self.map_info.rot_info.name
+            self.replay_filename = 'rpy_' + time_str + map_name + '.demo'
             self.replayfile = os.path.join(get_replays_dir(connection), self.replay_filename)
             self.replay_file = open(self.replayfile, 'wb')
             self.replay_file.write(struct.pack('BB', FILE_VERSION, version))
