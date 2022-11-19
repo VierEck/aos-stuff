@@ -60,7 +60,7 @@ rec_ups = replay_config.option('recorded_ups', 20).get()
 FILE_VERSION = 1
 version = 3
 
-def get_replays_dir(connection):
+def get_replays_dir():
     return (os.path.join(config.config_dir, 'replays'))
 
 @command('replay', 'rpy',admin_only=True)
@@ -141,12 +141,12 @@ def apply_script(protocol, connection, config):
             protocol.on_map_leave(self)
         
         def start_recording(self):
-            if not os.path.exists(get_replays_dir(connection)):
-                os.mkdir(os.path.join(get_replays_dir(connection)))
+            if not os.path.exists(get_replays_dir()):
+                os.mkdir(os.path.join(get_replays_dir()))
             time_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S_')
             map_name = self.map_info.rot_info.name
             self.replay_filename = 'rpy_' + time_str + map_name + '.demo'
-            self.replayfile = os.path.join(get_replays_dir(connection), self.replay_filename)
+            self.replayfile = os.path.join(get_replays_dir(), self.replay_filename)
             self.replay_file = open(self.replayfile, 'wb')
             self.replay_file.write(struct.pack('BB', FILE_VERSION, version))
             self.start_time = time()
