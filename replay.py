@@ -83,6 +83,8 @@ def replay(connection, value, time_length=None):
         if p.recording:
             p.end_recording()
             msg = 'demo recording turned OFF'
+    if connection.name is not None:
+        msg += '. %s' % connection.name
     p.irc_say(msg)
     return msg
         
