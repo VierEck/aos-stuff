@@ -36,6 +36,8 @@ config.toml copypaste template:
 [replay]
 autorecording = false #change this to true if u always want to record
 recorded_ups = 20
+replay_file_name = "rpy_{server}_{time}_{map}"
+
 '''
 
 from piqueserver.commands import command
@@ -64,7 +66,7 @@ def get_replays_dir():
     return (os.path.join(config.config_dir, 'replays'))
 
 @command('replay', 'rpy',admin_only=True)
-def replay(connection, value, time_length=None):
+def replay(connection, value, time_length_or_name=None, time_length=None):
     p = connection.protocol
     value = value.lower()
     msg = 'Invalid value. type ON or OFF' #we want explicit command use. 
@@ -74,10 +76,17 @@ def replay(connection, value, time_length=None):
             msg = 'not enough players'
             if len(p.connections) >= 1:
                 msg = 'demo recording turned ON'
-                if time_length is not None:
-                    p.record_length = int(time_length)
-                    msg = 'demo recording turned ON for %.f seconds' % p.record_length
-                p.start_recording()
+                if time_length_or_name is not None:
+                    if time_length_or_name.isdigit():
+                        p.record_length = int(time_length_or_name)
+                        time_length_or_name = None
+                        msg = 'demo recording turned ON for %.f seconds' % p.record_length
+                    else:
+                        if time_length is not None:
+                            p.record_length = int(time_length)
+                            msg = 'demo recording turned ON for %.f seconds' % p.record_length
+                        msg += '. filename: %s' % time_length_or_name
+                p.start_recording(time_length_or_name)
     elif value == 'off':
         msg = 'recording is already OFF'
         if p.recording:
@@ -140,12 +149,15 @@ def apply_script(protocol, connection, config):
                 self.irc_say('* demo recording turned OFF. map ended')
             protocol.on_map_leave(self)
         
-        def start_recording(self):
+        def start_recording(self, custom_name_command=None):
             if not os.path.exists(get_replays_dir()):
                 os.mkdir(os.path.join(get_replays_dir()))
             time_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S_')
+            server_name = self.name
             map_name = self.map_info.rot_info.name
-            self.replay_filename = 'rpy_' + time_str + map_name + '.demo'
+            self.replay_filename = 'rpy_' + time_str + server_name + '.demo'
+            if custom_name_command is not None:
+                self.replay_filename = custom_name
             self.replayfile = os.path.join(get_replays_dir(), self.replay_filename)
             self.replay_file = open(self.replayfile, 'wb')
             self.replay_file.write(struct.pack('BB', FILE_VERSION, version))
