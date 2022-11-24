@@ -36,7 +36,7 @@ config.toml copypaste template:
 [replay]
 autorecording = false #change this to true if u always want to record
 recorded_ups = 20
-replay_file_name = "rpy_{server}_{time}_{map}"
+file_name = "rpy_{server}_{time}_{map}"
 
 '''
 
@@ -58,6 +58,7 @@ import asyncio
 replay_config = config.section('replay')
 auto_replay = replay_config.option('autorecording', False).get()
 rec_ups = replay_config.option('recorded_ups', 20).get()
+file_name = replay_config.option('file_name', default='rpy_{server}_{time}_{map}').get()
 
 FILE_VERSION = 1
 version = 3
@@ -149,16 +150,23 @@ def apply_script(protocol, connection, config):
                 self.irc_say('* demo recording turned OFF. map ended')
             protocol.on_map_leave(self)
         
-        def start_recording(self, custom_name_command=None):
+        def create_demo_file(self, custom_name_command=None):
             if not os.path.exists(get_replays_dir()):
                 os.mkdir(os.path.join(get_replays_dir()))
-            time_str = datetime.now().strftime('%Y-%m-%d_%H-%M-%S_')
-            server_name = self.name
-            map_name = self.map_info.rot_info.name
-            self.replay_filename = 'rpy_' + time_str + server_name + '.demo'
+            fn = file_name
+            if '{server}' in fn:
+                fn = fn.replace('{server}', self.name)
+            if '{map}' in fn:
+                fn = fn.replace('{map}', self.map_info.rot_info.name)
+            if '{time}' in fn:
+                fn = fn.replace('{time}', datetime.now().strftime('%Y-%m-%d_%H-%M-%S_'))
+            self.replay_filename = fn
             if custom_name_command is not None:
                 self.replay_filename = custom_name
             self.replayfile = os.path.join(get_replays_dir(), self.replay_filename)
+        
+        def start_recording(self, custom_name_command=None):
+            self.create_demo_file(custom_name_command)
             self.replay_file = open(self.replayfile, 'wb')
             self.replay_file.write(struct.pack('BB', FILE_VERSION, version))
             self.start_time = time()
