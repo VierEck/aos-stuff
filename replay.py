@@ -162,7 +162,7 @@ def apply_script(protocol, connection, config):
                 fn = fn.replace('{time}', datetime.now().strftime('%Y-%m-%d_%H-%M-%S_'))
             self.replay_filename = fn
             if custom_name_command is not None:
-                self.replay_filename = custom_name
+                self.replay_filename = custom_name_command
             self.replay_filename += '.demo'
             self.replayfile = os.path.join(get_replays_dir(), self.replay_filename)
         
