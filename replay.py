@@ -191,6 +191,7 @@ def apply_script(protocol, connection, config):
         def end_recording(self):
             self.record_loop_task.cancel()
             self.record_loop_task = None
+            self.record_ups = rec_ups
             self.write_broadcast = False
             self.recording = False
             self.replay_file.close()
