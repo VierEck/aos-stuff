@@ -67,7 +67,7 @@ def get_replays_dir():
     return (os.path.join(config.config_dir, 'replays'))
 
 @command('replay', 'rpy',admin_only=True)
-def replay(connection, value, time_length_or_name=None, time_length=None):
+def replay(connection, value, name_length_ups=None, length_ups=None, ups_=None):
     p = connection.protocol
     value = value.lower()
     msg = 'Invalid value. type ON or OFF' #we want explicit command use. 
@@ -77,17 +77,29 @@ def replay(connection, value, time_length_or_name=None, time_length=None):
             msg = 'not enough players'
             if len(p.connections) >= 1:
                 msg = 'demo recording turned ON'
-                if time_length_or_name is not None:
-                    if time_length_or_name.isdigit():
-                        p.record_length = int(time_length_or_name)
-                        time_length_or_name = None
-                        msg = 'demo recording turned ON for %.f seconds' % p.record_length
+                if name_length_ups is not None:
+                    if 'ups' in name_length_ups:
+                        p.record_ups = int(name_length_ups[3:])
+                        msg += '. %.f ups' % p.record_ups
+                        name_length_ups = None
                     else:
-                        if time_length is not None:
-                            p.record_length = int(time_length)
-                            msg = 'demo recording turned ON for %.f seconds' % p.record_length
-                        msg += '. filename: %s' % time_length_or_name
-                p.start_recording(time_length_or_name)
+                        if name_length_ups.isdigit():
+                            p.record_length = int(name_length_ups)
+                            msg += '. %.f seconds' % p.record_length
+                            name_length_ups = None
+                        if length_ups is not None:
+                            if 'ups' in length_ups:
+                                p.record_ups = int(length_ups[3:])
+                                msg += '. %.f ups' % p.record_ups
+                            elif length_ups.isdigit() and name_length_ups is not None:
+                                p.record_length = int(length_ups)
+                                msg += '. %.f seconds' % p.record_length
+                                if ups_ is not None:
+                                    p.record_ups = int(ups_[3:])
+                                    msg += '. %.f ups' % p.record_ups
+                        if name_length_ups is not None:
+                            msg += '. filename: %s' % name_length_ups
+                p.start_recording(name_length_ups)
     elif value == 'off':
         msg = 'recording is already OFF'
         if p.recording:
@@ -119,6 +131,7 @@ def apply_script(protocol, connection, config):
         record_loop_task = None
         last_mapdata_written = time()
         last_length_check = time()
+        record_ups = rec_ups
         
         async def record_loop(self):
             while True:
@@ -136,7 +149,7 @@ def apply_script(protocol, connection, config):
                             self.last_length_check = time()
                     if self.write_broadcast:
                         self.write_ups()
-                await asyncio.sleep(1/rec_ups)
+                await asyncio.sleep(1/self.record_ups)
         
         def on_map_change(self, map_):
             if auto_replay and len(self.connections) >= 2 and not self.recording: 
