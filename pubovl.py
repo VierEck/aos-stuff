@@ -3,24 +3,23 @@ latest version: https://github.com/VierEck/aos-scripts/blob/main/pubovl.py
 LICENSE: GPL-3.0
 codeauthors: VierEck., DryByte (https://github.com/DryByte)
 
-spectate players without them knowing or give someone else that ability. 
-when using pubovl the server sends a create_player packet only to you or
-the player you want it to use on. 
-essentially you are now spectator only on ur side while you are still a 
-normal player server-side/to everyone else. 
-if u r using externalovl then u r completely invisible to everyone else!
+tricks your client into joining you as a spectator. noone else can see 
+that you r one. now u can spectate cheaters without alerting them of the 
+fact that u r spectating them. have fun. 
 
 scoreboard statistics may get out of sync. Ammo and blocks get out of 
 sync since leaving ovl refills you only client-side. this is not much of 
 a problem though since the server still keeps track of ur correct amount 
 of ammo and blocks. 
 
-``/ovl`` to become a "hidden spectator". 
-         use command again to leave that mode. 
-``/ovl <player>`` to make someone else become a "hidden spectator". 
-                  use again to make the player leave that mode. 
-``/exovl <ip address>`` use from console or somewhere else. to fake-join
-                        as a spectator on ur side. 
+/ovl 
+    to become a "hidden spectator". use command again to leave that mode. 
+/ovl <player> 
+    to make someone else become a "hidden spectator". use again to make 
+    the player leave that mode. 
+/exovl <ip address> 
+    use from console or somewhere else. to fake-join as a spectator on ur 
+    side. 
 '''
 
 from piqueserver.commands import command, target_player, get_player

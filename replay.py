@@ -8,29 +8,24 @@ original aos_replay by BR: (https://github.com/BR-/aos_replay)
 recordings resulting from this script r compatible with BR's
 Playback.py
 
-this script records gameplay for later examination by staff. a 
-lot of things can happen in the absence of staff, most of all 
-cheating. this script aims to provide staff an eye on the server 
-at all times. nothing will be unseen anymore, there will be no 
-hiding >:D
+record gameplay from your server. 
 
-another use for this script would be recording the game just for 
-fun. u may want to capture some of ur favorite precious moments 
-u experience playing on ur server. u could do this with a simple 
-screen recorder aswell, sure, but with an actual gameplay 
-recorder tool, like this script, u r practically recording the 
-game in 3d, from all perspectives!
+commands:
+/replay <on> <optional: custom filename> <optional: recording length in seconds> <optional: recorded ups>
+    turns on a new recording. optionally specify a filename, recording length and/or recorded ups. 
+/replay <off>
+    turns off current recording.
 
-! IMPORTANT ! pls read everything down below. 
-auto mode only starts to record if there is more than 1 player 
-present. auto mode will try to start a recording on map change. 
-recording will always be automatically ended if there is less 
-than 2 players present or if the map ends. 
-
-always creates a new file when recording is started. 
-
-autorecording setting basically makes server always record if 
-there r enough players. 
+configs:
+autorecording:
+    automatically starts a new recording if enough players have joined again or on map change if enough players r present
+recorded_ups:
+    how many world_updates per second should be recorded
+file_name:
+    the general file name of the recordings
+        {server} = name of your server
+        {map} = name of recorded map
+        {time} = time and date of start of recording
 
 config.toml copypaste template:
 [replay]
