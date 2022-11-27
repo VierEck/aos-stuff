@@ -163,6 +163,7 @@ def apply_script(protocol, connection, config):
             self.replay_filename = fn
             if custom_name_command is not None:
                 self.replay_filename = custom_name
+            self.replay_filename += '.demo'
             self.replayfile = os.path.join(get_replays_dir(), self.replay_filename)
         
         def start_recording(self, custom_name_command=None):
