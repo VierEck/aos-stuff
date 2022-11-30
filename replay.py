@@ -127,6 +127,7 @@ def apply_script(protocol, connection, config):
         last_mapdata_written = time()
         last_length_check = time()
         record_ups = rec_ups
+        saved_packets = None
         
         async def record_loop(self):
             while True:
@@ -180,6 +181,7 @@ def apply_script(protocol, connection, config):
             self.replay_file.write(struct.pack('BB', FILE_VERSION, version))
             self.start_time = time()
             self.record_loop_task = asyncio.ensure_future(self.record_loop())
+            self.write_state()
             self.write_map(ProgressiveMapGenerator(self.map))
             self.recording = True
         
@@ -201,6 +203,8 @@ def apply_script(protocol, connection, config):
         def broadcast_contained(self, contained, unsequenced=False, sender=None, team=None, save=False, rule=None):
             if self.write_broadcast and contained.id != 2:
                 self.write_pack(contained)
+            if self.saved_packets is not None and save:
+                self.saved_packets.append(saved_contained)
             return protocol.broadcast_contained(self, contained, unsequenced, sender, team, save, rule)
             
         def write_ups(self):
@@ -237,7 +241,9 @@ def apply_script(protocol, connection, config):
                 return
             if not self.mapdata.data_left():
                 self.mapdata = None
-                self.write_state()
+                for saved_contained in self.saved_packets:
+                    self.write_pack(saved_contained)
+                self.saved_packets = None
                 self.write_broadcast = True
                 self.sig_vier()
                 return
@@ -249,6 +255,7 @@ def apply_script(protocol, connection, config):
                 self.write_pack(mapdata)
         
         def write_state(self):
+            self.saved_packets = []
             for player in self.players.values():
                 if player.name is None:
                     continue
@@ -260,7 +267,7 @@ def apply_script(protocol, connection, config):
                 existing_player.kills = player.kills
                 existing_player.team = player.team.id
                 existing_player.color = make_color(*player.color)
-                self.write_pack(existing_player)
+                self.saved_packets.append(existing_player)
                
             self.recorder_id = 33 #u will need a modified client that will accept this!
                     
@@ -318,12 +325,12 @@ def apply_script(protocol, connection, config):
             elif game_mode == TC_MODE:
                 state_data.state = tc_data
             
-            self.write_pack(state_data)
+            self.saved_packets.append(state_data)
             
         def sig_vier(self): #yes i just had to do this lol
             chat_message = loaders.ChatMessage()
             chat_message.chat_type = 2
-            chat_message.player_id = 35
+            chat_message.player_id = 33
             chat_message.value = 'recorded with replay.py by VierEck.'
             self.write_pack(chat_message)
     
