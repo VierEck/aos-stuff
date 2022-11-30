@@ -15,6 +15,7 @@ commands:
     turns on a new recording. optionally specify a filename, recording length and/or recorded ups. 
 /replay <off>
     turns off current recording.
+u can use /rpy instead of /replay
 
 configs:
 autorecording:
