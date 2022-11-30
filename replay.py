@@ -205,7 +205,7 @@ def apply_script(protocol, connection, config):
             if self.write_broadcast and contained.id != 2:
                 self.write_pack(contained)
             if self.saved_packets is not None and save:
-                self.saved_packets.append(saved_contained)
+                self.saved_packets.append(contained)
             return protocol.broadcast_contained(self, contained, unsequenced, sender, team, save, rule)
             
         def write_ups(self):
