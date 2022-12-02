@@ -52,6 +52,11 @@ def pubovl(connection, player):
         create_player.team = -1
 
         player.send_contained(create_player)
+        
+        client = player.client_string.lower()
+        if not "voxlap" in client: #fake deuce does not work in voxlap ;-;
+            player.spawn_deuce()
+            
         player.send_chat("you are now using pubovl")
         protocol.irc_say('* %s is using pubovl' % player.name) #let the rest of the staff team know u r using this
     else:
@@ -60,8 +65,11 @@ def pubovl(connection, player):
         set_color = loaders.SetColor()
         set_color.player_id = player.player_id
         set_color.value = make_color(*player.color)
-
+        
         player.send_contained(create_player, player)
+        
+        if player.deuce_spawned:
+            player.delete_deuce()
         
         if player.world_object.dead:                              #without this u could run around even though u r supposed to be
             schedule = Scheduler(player.protocol)                 #dead. this could be abused for cheats so we dont allow this. 
@@ -95,8 +103,63 @@ def exovl(connection, ip):                        #                  yet. in thi
             protocol.irc_say('*%s is using externalovl' % ip)
 
 def apply_script(protocol, connection, config):
+    class pubovlProtocol(protocol):
+        deuce_id = 0
+        
     class pubovlConnection(connection):
         hidden = False
+        deuce_spawned = False
+        
+        def is_server_full(self):
+            if len(self.protocol.players) >= 32:
+                return True
+            else:
+                return False
+                
+        def delete_deuce(self):
+            deuce_left = loaders.PlayerLeft()
+            deuce_left.player_id = self.protocol.deuce_id
+            self.send_contained(deuce_left, self)
+            self.deuce_spawned = False
+        
+        def spawn_deuce(self):
+            x, y, z = self.world_object.position.get()
+            create_deuce = loaders.CreatePlayer()
+            create_deuce.player_id = self.protocol.deuce_id
+            create_deuce.name = self.name
+            create_deuce.team = self.team.id
+            create_deuce.x = x
+            create_deuce.y = y
+            create_deuce.z = z
+            create_deuce.weapon = self.weapon
+            self.send_contained(create_deuce)
+            self.deuce_spawned = True
+            schedule = Scheduler(self.protocol)
+            schedule.call_later(0.1, self.deuce_ups)
+        
+        def deuce_ups(self):
+            self.protocol.players[self.protocol.deuce_id] = self
+            items = []
+            highest_player_id = max(self.protocol.players)
+            for i in range(highest_player_id+1):
+                position = orientation = None
+                try:
+                    player = self.protocol.players[i]
+                    if (not player.filter_visibility_data and
+                            not player.team.spectator):
+                        world_object = player.world_object
+                        position = world_object.position.get()
+                        orientation = world_object.orientation.get()
+                except (KeyError, TypeError, AttributeError):
+                    pass
+                if position is None:
+                    position = (0.0, 0.0, 0.0)
+                    orientation = (0.0, 0.0, 0.0)
+                items.append((position, orientation))
+            world_update = loaders.WorldUpdate()
+            world_update.items = items[:highest_player_id+1]
+            del self.protocol.players[self.protocol.deuce_id]
+            self.send_contained(world_update)
         
         def spawn_dead_after_ovl(self):
             kill_action = loaders.KillAction()
@@ -124,8 +187,23 @@ def apply_script(protocol, connection, config):
             if by is not None and by is not self:
                 by.add_score(1)
             kill_action.respawn_time = self.get_respawn_time() + 1
+            
+            kill_deuce = loaders.KillAction()
+            kill_deuce.kill_type = kill_type
+            kill_deuce.player_id = self.protocol.deuce_id
+            if by is None:
+                kill_deuce.killer_id = kill_deuce.player_id = self.protocol.deuce_id
+            else:
+                kill_deuce.killer_id = by.player_id
+                kill_deuce.player_id = self.protocol.deuce_id
+            kill_deuce.respawn_time = self.get_respawn_time() + 1
+            
             if self.hidden: 
                 self.protocol.broadcast_contained(kill_action, sender=self, save=True) 
+                if self.deuce_spawned:
+                    self.send_contained(kill_deuce)
+                if by is not None:
+                    self.send_chat('[pubovl]: you were killed by %s' % by.name)
             else:
                  self.protocol.broadcast_contained(kill_action, save=True)   
             self.world_object.dead = True
@@ -179,6 +257,20 @@ def apply_script(protocol, connection, config):
             if not self.client_info:
                 handshake_init = loaders.HandShakeInit()
                 self.send_contained(handshake_init)
+                
+            if self.player_id == self.protocol.deuce_id:
+                if self.deuce_spawned:
+                    for players in self.protocol.players.values():
+                        if players.hidden:
+                            players.delete_deuce()
+                        
+                self.protocol.deuce_id = self.protocol.player_ids.pop()
+                self.protocol.player_ids.put_back(self.protocol.deuce_id)
+                
+                if self.deuce_spawned:
+                    for players in self.protocol.players.values():
+                        if players.hidden:
+                            players.spawn_deuce()
 
             if not self.hidden:
                 return connection.spawn(self, pos)
@@ -187,7 +279,9 @@ def apply_script(protocol, connection, config):
             if self.hidden:                                     #teamid dont align. however if an admin force switches u the
                 self.send_chat('you are no longer using pubovl')#script looses track of wether u r using ovl or not. 
                 self.hidden = False                             #idk why i cant irc relay this. 
+                if self.deuce_spawned:
+                    self.delete_deuce()
 
             return connection.on_team_changed(self, old_team)
             
-    return protocol, pubovlConnection
+    return pubovlProtocol, pubovlConnection
