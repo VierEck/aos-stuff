@@ -45,7 +45,7 @@ def pubovl(connection, player):
     create_player.name = player.name
     create_player.x = x
     create_player.y = y
-    create_player.z = z
+    create_player.z = z + 2
     create_player.weapon = player.weapon
 
     if player.hidden:
