@@ -36,6 +36,8 @@ autorecording = false #change this to true if u always want to record
 recorded_ups = 20
 minimum_recorded_ups = 10
 maximum_recorded_ups = 60
+minimum_recording_length = 30
+maximum_recording_length = 3600
 file_name = "rpy_{server}_{time}_{map}"
 replay_help = [
   "/rpy ups <recorded ups>",
@@ -73,6 +75,8 @@ rec_ups = replay_config.option('recorded_ups', 20).get()
 file_name = replay_config.option('file_name', default='rpy_{server}_{time}_{map}').get()
 min_rec_ups = replay_config.option('minimum_recorded_ups', 10).get()
 max_rec_ups = replay_config.option('maximum_recorded_ups', 60).get()
+min_length = replay_config.option('minimum_recording_length', 30).get()
+max_length = replay_config.option('maximum_recording_length', 3600).get()
 replay_help = replay_config.option('replay_help', default=replay_help_default).get()
 
 FILE_VERSION = 1
@@ -84,13 +88,13 @@ def get_replays_dir():
 only_once = []
 def do_subvalue(self, value, need_func=False):
     submsg = 'invalid'
-    if 1 not in only_once and value[:3].lower() == 'ups' and value[3:].isdigit():
+    if 1 not in only_once and value[:3].lower() == 'ups' and value[3:].isdigit() and min_rec_ups <= int(value[3:]) <= max_rec_ups:
         if need_func:
             self.record_ups = int(value[3:])
         else:
             submsg = '. %.f ups' % self.record_ups
             only_once.append(1)
-    elif 2 not in only_once and value.isdigit():
+    elif 2 not in only_once and value.isdigit() and min_length <= int(value) <= max_length:
         if need_func:
             self.record_length = int(value)
         else:
