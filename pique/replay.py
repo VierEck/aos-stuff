@@ -192,7 +192,6 @@ def apply_script(protocol, connection, config):
                             if self.record_length <= (time() - self.start_time):
                                 self.end_recording()
                                 self.irc_say('* demo recording has turned OFF after %.f seconds' % self.record_length)
-                                self.record_length = None
                             self.last_length_check = time()
                     if self.write_broadcast:
                         self.write_ups()
@@ -244,6 +243,7 @@ def apply_script(protocol, connection, config):
             self.write_broadcast = False
             self.recording = False
             self.replay_file.close()
+            self.record_length = None
         
         def write_pack(self, contained):
             data = ByteWriter()
