@@ -74,8 +74,9 @@ def pubovl(connection, player):
         if player.world_object.dead:                              #without this u could run around even though u r supposed to be
             schedule = Scheduler(player.protocol)                 #dead. this could be abused for cheats so we dont allow this. 
             schedule.call_later(0.1, player.spawn_dead_after_ovl) #need call_later cause otherwise u die as spectator which means u
-                                                                  #dont die at all. 
-
+        else:                                                     #dont die at all. 
+            player.fix_ori = player.protocol.world_time + 0.5
+            
         player.send_chat('you are no longer using pubovl')
         protocol.irc_say('* %s is no longer using pubovl' % player.name)
         
@@ -109,6 +110,7 @@ def apply_script(protocol, connection, config):
     class pubovlConnection(connection):
         hidden = False
         deuce_spawned = False
+        fix_ori = 0
         
         def is_server_full(self):
             if len(self.protocol.players) >= 32:
@@ -168,6 +170,17 @@ def apply_script(protocol, connection, config):
             kill_action.kill_type = 2
             kill_action.respawn_time = self.get_respawn_time() #not actual spawn time, maybe fix this later. 
             self.send_contained(kill_action)
+            
+        def on_orientation_update(self, x, y, z):
+            if self.fix_ori > self.protocol.world_time:
+                a, b, c = self.world_object.orientation.get()
+                send_ori = loaders.OrientationData()
+                send_ori.x = a
+                send_ori.y = b
+                send_ori.z = c
+                self.send_contained(send_ori)
+                return False
+            return connection.on_orientation_update(self, x, y, z)
         
         def kill(self, by=None, kill_type=WEAPON_KILL, grenade=None):
             if self.hp is None:
