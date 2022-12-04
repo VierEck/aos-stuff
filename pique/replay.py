@@ -37,7 +37,12 @@ recorded_ups = 20
 minimum_recorded_ups = 10
 maximum_recorded_ups = 60
 file_name = "rpy_{server}_{time}_{map}"
-
+replay_help = [
+  "/rpy ups <recorded ups>",
+  "/rpy off",
+  "/rpy on <filename> <recording length> <recorded ups>",
+  "use these commands:",
+]
 '''
 
 from piqueserver.commands import command
@@ -55,12 +60,20 @@ from pyspades.constants import CTF_MODE, TC_MODE
 from pyspades.common import make_color
 import asyncio
 
+replay_help_default = [
+  "/rpy ups <recorded ups>",
+  "/rpy off",
+  "/rpy on <filename> <recording length> <recorded ups>",
+  "use these commands:",
+]
+
 replay_config = config.section('replay')
 auto_replay = replay_config.option('autorecording', False).get()
 rec_ups = replay_config.option('recorded_ups', 20).get()
 file_name = replay_config.option('file_name', default='rpy_{server}_{time}_{map}').get()
 min_rec_ups = replay_config.option('minimum_recorded_ups', 10).get()
 max_rec_ups = replay_config.option('maximum_recorded_ups', 60).get()
+replay_help = replay_config.option('replay_help', default=replay_help_default).get()
 
 FILE_VERSION = 1
 version = 3
@@ -70,10 +83,14 @@ def get_replays_dir():
 
 @command('replay', 'rpy',admin_only=True)
 def replay(connection, value, name_length_ups=None, length_ups=None, ups_=None):
-    p = connection.protocol
+    c = connection
+    p = c.protocol
     value = value.lower()
-    msg = 'Invalid value. type either ON or OFF or set the recorded UPS' #we want explicit command use. 
-    if value == 'on':
+    msg = 'Invalid value. for more info type: /rpy help' #we want explicit command use. 
+    if value == 'help':
+        c.send_lines(replay_help)
+        msg = None
+    elif value == 'on':
         msg = 'recording is already ON'
         if not p.recording:
             msg = 'not enough players'
@@ -113,10 +130,11 @@ def replay(connection, value, name_length_ups=None, length_ups=None, ups_=None):
         if subvalue is not None and subvalue.isdigit() and min_rec_ups <= int(subvalue) <= max_rec_ups and p.recording:
             p.record_ups = int(name_length_ups)
             msg = 'recorded UPS is set to %.f' % p.record_ups
-    if connection.name is not None:
-        msg += '. %s' % connection.name
-    p.irc_say(msg)
-    return msg
+    if msg is not None:    
+        if connection.name is not None:
+            msg += '. %s' % connection.name
+        p.irc_say(msg)
+        return msg
         
 def apply_script(protocol, connection, config):
     class replayconnection(connection):
