@@ -80,9 +80,33 @@ version = 3
 
 def get_replays_dir():
     return (os.path.join(config.config_dir, 'replays'))
+    
+only_once = []
+def do_subvalue(self, value, need_func=False):
+    submsg = 'invalid'
+    if 1 not in only_once and value[:3].lower() == 'ups' and value[3:].isdigit():
+        if need_func:
+            self.record_ups = int(value[3:])
+        else:
+            submsg = '. %.f ups' % self.record_ups
+            only_once.append(1)
+    elif 2 not in only_once and value.isdigit():
+        if need_func:
+            self.record_length = int(value)
+        else:
+            submsg = '. %.f seconds' % self.record_length
+            only_once.append(2)
+    elif 3 not in only_once and not value.isdigit() and not value[:3].lower() == 'ups':
+        if need_func:
+            self.custom_file_name = value
+        else:
+           submsg = '. filename: %s' % value
+           only_once.append(3)
+    if need_func is False:
+        return submsg
 
 @command('replay', 'rpy',admin_only=True)
-def replay(connection, value, name_length_ups=None, length_ups=None, ups_=None):
+def replay(connection, value, subvalue_one=None, subvalue_two=None, subvalue_three=None):
     c = connection
     p = c.protocol
     value = value.lower()
@@ -96,29 +120,20 @@ def replay(connection, value, name_length_ups=None, length_ups=None, ups_=None):
             msg = 'not enough players'
             if len(p.connections) >= 1:
                 msg = 'demo recording turned ON'
-                if name_length_ups is not None:
-                    if 'ups' in name_length_ups:
-                        p.record_ups = int(name_length_ups[3:])
-                        msg += '. %.f ups' % p.record_ups
-                        name_length_ups = None
-                    else:
-                        if name_length_ups.isdigit():
-                            p.record_length = int(name_length_ups)
-                            msg += '. %.f seconds' % p.record_length
-                            name_length_ups = None
-                        if length_ups is not None:
-                            if 'ups' in length_ups:
-                                p.record_ups = int(length_ups[3:])
-                                msg += '. %.f ups' % p.record_ups
-                            elif length_ups.isdigit() and name_length_ups is not None:
-                                p.record_length = int(length_ups)
-                                msg += '. %.f seconds' % p.record_length
-                                if ups_ is not None:
-                                    p.record_ups = int(ups_[3:])
-                                    msg += '. %.f ups' % p.record_ups
-                        if name_length_ups is not None:
-                            msg += '. filename: %s' % name_length_ups
-                p.start_recording(name_length_ups)
+                if subvalue_one is not None:
+                    do_subvalue(p, subvalue_one, need_func=True)
+                    msg += do_subvalue(p, subvalue_one)
+                    if subvalue_two is not None:
+                        do_subvalue(p, subvalue_two, need_func=True)
+                        msg += do_subvalue(p, subvalue_two)
+                        if subvalue_three is not None:
+                            do_subvalue(p, subvalue_three, need_func=True)
+                            msg += do_subvalue(p, subvalue_three)
+                if 'invalid' in msg:
+                    msg = 'Invalid value. for more info type: /rpy help'
+                else:
+                    p.start_recording()
+                only_once.clear()
     elif value == 'off':
         msg = 'recording is already OFF'
         if p.recording:
@@ -126,7 +141,7 @@ def replay(connection, value, name_length_ups=None, length_ups=None, ups_=None):
             msg = 'demo recording turned OFF'
     elif value == 'ups':
         msg = 'invalid UPS value'
-        subvalue = name_length_ups
+        subvalue = subvalue_one
         if subvalue is not None and subvalue.isdigit() and min_rec_ups <= int(subvalue) <= max_rec_ups and p.recording:
             p.record_ups = int(name_length_ups)
             msg = 'recorded UPS is set to %.f' % p.record_ups
@@ -159,6 +174,7 @@ def apply_script(protocol, connection, config):
         last_length_check = time()
         record_ups = rec_ups
         saved_packets = None
+        custom_file_name = None
         
         async def record_loop(self):
             while True:
@@ -190,7 +206,7 @@ def apply_script(protocol, connection, config):
                 self.irc_say('* demo recording turned OFF. map ended')
             protocol.on_map_leave(self)
         
-        def create_demo_file(self, custom_name_command=None):
+        def create_demo_file(self):
             if not os.path.exists(get_replays_dir()):
                 os.mkdir(os.path.join(get_replays_dir()))
             fn = file_name
@@ -201,13 +217,14 @@ def apply_script(protocol, connection, config):
             if '{time}' in fn:
                 fn = fn.replace('{time}', datetime.now().strftime('%Y-%m-%d_%H-%M-%S_'))
             self.replay_filename = fn
-            if custom_name_command is not None:
-                self.replay_filename = custom_name_command
+            if self.custom_file_name is not None:
+                self.replay_filename = self.custom_file_name
+                self.custom_file_name = None
             self.replay_filename += '.demo'
             self.replayfile = os.path.join(get_replays_dir(), self.replay_filename)
         
-        def start_recording(self, custom_name_command=None):
-            self.create_demo_file(custom_name_command)
+        def start_recording(self):
+            self.create_demo_file()
             self.replay_file = open(self.replayfile, 'wb')
             self.replay_file.write(struct.pack('BB', FILE_VERSION, version))
             self.start_time = time()
