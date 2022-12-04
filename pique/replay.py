@@ -147,7 +147,7 @@ def replay(connection, value, subvalue_one=None, subvalue_two=None, subvalue_thr
         msg = 'invalid UPS value'
         subvalue = subvalue_one
         if subvalue is not None and subvalue.isdigit() and min_rec_ups <= int(subvalue) <= max_rec_ups and p.recording:
-            p.record_ups = int(name_length_ups)
+            p.record_ups = int(subvalue)
             msg = 'recorded UPS is set to %.f' % p.record_ups
     if msg is not None:    
         if connection.name is not None:
