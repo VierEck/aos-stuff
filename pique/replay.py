@@ -163,6 +163,12 @@ def apply_script(protocol, connection, config):
                 self.protocol.irc_say('* demo recording turned OFF. not enough players')
             return connection.on_disconnect(self)
         
+        def _connection_ack(self):
+            if self.protocol.recorder_id != 33 and len(self.protocol.connections)>31:
+                self.protocol.change_recorder_id()
+
+            return connection._connection_ack(self)
+
         def on_join(self):
             if auto_replay and len(self.protocol.connections) >= 2 and not self.protocol.recording:
                 self.protocol.start_recording()
@@ -179,7 +185,8 @@ def apply_script(protocol, connection, config):
         record_ups = rec_ups
         saved_packets = None
         custom_file_name = None
-        
+        recorder_id = 33
+
         async def record_loop(self):
             while True:
                 if self.recording:
@@ -320,9 +327,13 @@ def apply_script(protocol, connection, config):
                 existing_player.team = player.team.id
                 existing_player.color = make_color(*player.color)
                 self.saved_packets.append(existing_player)
-               
-            self.recorder_id = 33 #u will need a modified client that will accept this!
-                    
+            
+            # reserve a player id and change it later
+            if len(self.connections) > 31:
+                self.recorder_id = 33
+            else:
+                self.recorder_id = self.player_ids.pop()
+            
             blue = self.blue_team
             green = self.green_team
     
@@ -385,5 +396,20 @@ def apply_script(protocol, connection, config):
             chat_message.player_id = 33
             chat_message.value = 'recorded with replay.py by VierEck.'
             self.write_pack(chat_message)
+
+        def change_recorder_id(self):
+            if self.recorder_id == 33:
+                return
+
+            chat_message = loaders.ChatMessage()
+            chat_message.chat_type = 2
+            chat_message.player_id = 33
+            chat_message.value = 'Your ID is going to change to 33, if your client doesnt support it please use https://github.com/VierEck/openspades'
+            self.write_pack(chat_message)
+
+            self.player_ids.put_back(self.recorder_id)
+            self.write_state()
+            self.write_map(ProgressiveMapGenerator(self.map))
+
     
     return replayprotocol, replayconnection
