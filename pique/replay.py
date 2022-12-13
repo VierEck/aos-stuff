@@ -1,7 +1,7 @@
 '''
 latest version of replay.py: https://github.com/VierEck/aos-scripts/blob/main/pique/replay.py
 LICENSE: GPL-3.0
-codeauthor: VierEck.
+codeauthor: VierEck., DryByte (https://github.com/DryByte)
 
 original aos_replay by BR: (https://github.com/BR-/aos_replay)
 
