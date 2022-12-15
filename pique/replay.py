@@ -1,7 +1,7 @@
 '''
 latest version of replay.py: https://github.com/VierEck/aos-scripts/blob/main/pique/replay.py
 LICENSE: GPL-3.0
-codeauthor: VierEck., DryByte (https://github.com/DryByte)
+codeauthors: VierEck., DryByte (https://github.com/DryByte)
 
 original aos_replay by BR: (https://github.com/BR-/aos_replay)
 
@@ -86,28 +86,21 @@ def get_replays_dir():
     return (os.path.join(config.config_dir, 'replays'))
     
 only_once = []
-def do_subvalue(self, value, need_func=False):
+def do_subvalue(self, value):
     submsg = 'invalid'
     if 1 not in only_once and value[:3].lower() == 'ups' and value[3:].isdigit() and min_rec_ups <= int(value[3:]) <= max_rec_ups:
-        if need_func:
-            self.record_ups = int(value[3:])
-        else:
-            submsg = '. %.f ups' % self.record_ups
-            only_once.append(1)
+        self.record_ups = int(value[3:])
+        submsg = '. %.f ups' % self.record_ups
+        only_once.append(1)
     elif 2 not in only_once and value.isdigit() and min_length <= int(value) <= max_length:
-        if need_func:
-            self.record_length = int(value)
-        else:
-            submsg = '. %.f seconds' % self.record_length
-            only_once.append(2)
+        self.record_length = int(value)
+        submsg = '. %.f seconds' % self.record_length
+        only_once.append(2)
     elif 3 not in only_once and not value.isdigit() and not value[:3].lower() == 'ups':
-        if need_func:
-            self.custom_file_name = value
-        else:
-           submsg = '. filename: %s' % value
-           only_once.append(3)
-    if need_func is False:
-        return submsg
+        self.custom_file_name = value
+        submsg = '. filename: %s' % value
+        only_once.append(3)
+    return submsg
 
 @command('replay', 'rpy',admin_only=True)
 def replay(connection, value, subvalue_one=None, subvalue_two=None, subvalue_three=None):
@@ -125,13 +118,10 @@ def replay(connection, value, subvalue_one=None, subvalue_two=None, subvalue_thr
             if len(p.connections) >= 1:
                 msg = 'demo recording turned ON'
                 if subvalue_one is not None:
-                    do_subvalue(p, subvalue_one, need_func=True)
                     msg += do_subvalue(p, subvalue_one)
                     if subvalue_two is not None:
-                        do_subvalue(p, subvalue_two, need_func=True)
                         msg += do_subvalue(p, subvalue_two)
                         if subvalue_three is not None:
-                            do_subvalue(p, subvalue_three, need_func=True)
                             msg += do_subvalue(p, subvalue_three)
                 if 'invalid' in msg:
                     msg = 'Invalid value. for more info type: /rpy help'
