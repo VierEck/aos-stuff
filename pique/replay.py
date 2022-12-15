@@ -88,14 +88,16 @@ def get_replays_dir():
 only_once = []
 def do_subvalue(self, value):
     submsg = 'invalid'
-    if 1 not in only_once and value[:3].lower() == 'ups' and value[3:].isdigit() and min_rec_ups <= int(value[3:]) <= max_rec_ups:
-        self.record_ups = int(value[3:])
-        submsg = '. %.f ups' % self.record_ups
-        only_once.append(1)
-    elif 2 not in only_once and value.isdigit() and min_length <= int(value) <= max_length:
-        self.record_length = int(value)
-        submsg = '. %.f seconds' % self.record_length
-        only_once.append(2)
+    if 1 not in only_once and value[:3].lower() == 'ups' and value[3:].isdigit():
+        if (min_rec_ups <= int(value[3:]) <= max_rec_ups) or (min_rec_ups <= int(value[3:]) and max_rec_ups == 0):
+            self.record_ups = int(value[3:])
+            submsg = '. %.f ups' % self.record_ups
+            only_once.append(1)
+    elif 2 not in only_once and value.isdigit():
+        if (min_length <= int(value) <= max_length) or (min_length <= int(value) and max_length == 0):
+            self.record_length = int(value)
+            submsg = '. %.f seconds' % self.record_length
+            only_once.append(2)
     elif 3 not in only_once and not value.isdigit() and not value[:3].lower() == 'ups':
         self.custom_file_name = value
         submsg = '. filename: %s' % value
