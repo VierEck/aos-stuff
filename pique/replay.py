@@ -35,9 +35,9 @@ config.toml copypaste template:
 autorecording = false #change this to true if u always want to record
 recorded_ups = 20
 minimum_recorded_ups = 10
-maximum_recorded_ups = 60
+maximum_recorded_ups = 60 #set this to 0 if u dont want to cap recorded ups
 minimum_recording_length = 30
-maximum_recording_length = 3600
+maximum_recording_length = 3600 #set this to 0 if u dont want to cap recording length
 file_name = "rpy_{server}_{time}_{map}"
 replay_help = [
   "/rpy ups <recorded ups>",
