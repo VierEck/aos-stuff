@@ -215,7 +215,7 @@ def apply_script(protocol, connection, config):
                 self.end_recording()
                 self.delete_old_demos()
                 self.irc_say('* demo recording turned OFF. map ended')
-            protocol.on_map_leave(self)
+            return protocol.on_map_leave(self)
         
         def create_demo_file(self):
             if not os.path.exists(get_replays_dir()):
