@@ -61,6 +61,7 @@ from typing import Optional
 from pyspades.constants import CTF_MODE, TC_MODE
 from pyspades.common import make_color
 import asyncio
+import gzip
 
 replay_help_default = [
   "/rpy ups <recorded ups>",
@@ -223,12 +224,12 @@ def apply_script(protocol, connection, config):
             if self.custom_file_name is not None:
                 self.replay_filename = self.custom_file_name
                 self.custom_file_name = None
-            self.replay_filename += '.demo'
+            self.replay_filename += '.demo.gz'
             self.replayfile = os.path.join(get_replays_dir(), self.replay_filename)
         
         def start_recording(self):
             self.create_demo_file()
-            self.replay_file = open(self.replayfile, 'wb')
+            self.replay_file = gzip.open(self.replayfile, 'wb')
             self.replay_file.write(struct.pack('BB', FILE_VERSION, version))
             self.start_time = time()
             self.record_loop_task = asyncio.ensure_future(self.record_loop())
