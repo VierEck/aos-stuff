@@ -37,9 +37,10 @@ recorded_ups = 20
 minimum_recorded_ups = 10
 maximum_recorded_ups = 60 #set this to 0 if u dont want to cap recorded ups
 minimum_recording_length = 30
-maximum_recording_length = 3600 #set this to 0 if u dont want to cap recording length
+maximum_recording_length = 3600 #=1hour (in seconds). set this to 0 if u dont want to cap recording length
 file_name = "rpy_{server}_{time}_{map}"
-compress_with_gzip = true
+compress_with_gzip = false
+auto_delete_after_time = 604800 #=1week (in seconds). set this to 0 if u want to keep old recordings. 
 replay_help = [
   "/rpy ups <recorded ups>",
   "/rpy off",
@@ -79,7 +80,8 @@ max_rec_ups = replay_config.option('maximum_recorded_ups', 60).get()
 min_length = replay_config.option('minimum_recording_length', 30).get()
 max_length = replay_config.option('maximum_recording_length', 3600).get()
 replay_help = replay_config.option('replay_help', default=replay_help_default).get()
-gzip_compress = replay_config.option('compress_with_gzip', True).get()
+gzip_compress = replay_config.option('compress_with_gzip', False).get()
+auto_delete_time = replay_config.option('auto_delete_after_time', 604800).get()
 
 if gzip_compress:
     import gzip
@@ -152,7 +154,7 @@ def replay(connection, value, subvalue_one=None, subvalue_two=None, subvalue_thr
             msg += '. %s' % connection.name
         p.irc_say(msg)
         return msg
-        
+
 def apply_script(protocol, connection, config):
     class replayconnection(connection):
         def on_disconnect(self):
@@ -211,6 +213,7 @@ def apply_script(protocol, connection, config):
         def on_map_leave(self):
             if self.recording:
                 self.end_recording()
+                self.delete_old_demos()
                 self.irc_say('* demo recording turned OFF. map ended')
             protocol.on_map_leave(self)
         
@@ -234,6 +237,14 @@ def apply_script(protocol, connection, config):
                 self.replay_filename += '.demo'
             self.replayfile = os.path.join(get_replays_dir(), self.replay_filename)
         
+        def delete_old_demos(self):
+            if auto_delete_time == 0:
+                return
+            for f in os.listdir(get_replays_dir()):
+                if '.demo' in f:
+                    if os.stat(os.path.join(get_replays_dir(), f)).st_mtime < time() - auto_delete_time:
+                        os.remove(os.path.join(get_replays_dir(), f))
+                    
         def start_recording(self):
             self.create_demo_file()
             if gzip_compress:
