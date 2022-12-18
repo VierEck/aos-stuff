@@ -39,6 +39,7 @@ maximum_recorded_ups = 60 #set this to 0 if u dont want to cap recorded ups
 minimum_recording_length = 30
 maximum_recording_length = 3600 #set this to 0 if u dont want to cap recording length
 file_name = "rpy_{server}_{time}_{map}"
+compress_with_gzip = true
 replay_help = [
   "/rpy ups <recorded ups>",
   "/rpy off",
@@ -61,7 +62,6 @@ from typing import Optional
 from pyspades.constants import CTF_MODE, TC_MODE
 from pyspades.common import make_color
 import asyncio
-import gzip
 
 replay_help_default = [
   "/rpy ups <recorded ups>",
@@ -79,6 +79,10 @@ max_rec_ups = replay_config.option('maximum_recorded_ups', 60).get()
 min_length = replay_config.option('minimum_recording_length', 30).get()
 max_length = replay_config.option('maximum_recording_length', 3600).get()
 replay_help = replay_config.option('replay_help', default=replay_help_default).get()
+gzip_compress = replay_config.option('compress_with_gzip', True).get()
+
+if gzip_compress:
+    import gzip
 
 FILE_VERSION = 1
 version = 3
@@ -224,12 +228,18 @@ def apply_script(protocol, connection, config):
             if self.custom_file_name is not None:
                 self.replay_filename = self.custom_file_name
                 self.custom_file_name = None
-            self.replay_filename += '.demo.gz'
+            if gzip_compress:
+                self.replay_filename += '.demo.gz'
+            else:
+                self.replay_filename += '.demo'
             self.replayfile = os.path.join(get_replays_dir(), self.replay_filename)
         
         def start_recording(self):
             self.create_demo_file()
-            self.replay_file = gzip.open(self.replayfile, 'wb')
+            if gzip_compress:
+                self.replay_file = gzip.open(self.replayfile, 'wb')
+            else:
+                self.replay_file = open(self.replayfile, 'wb')
             self.replay_file.write(struct.pack('BB', FILE_VERSION, version))
             self.start_time = time()
             self.record_loop_task = asyncio.ensure_future(self.record_loop())
