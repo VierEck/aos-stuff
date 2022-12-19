@@ -19,17 +19,6 @@ commands:
     set the recorded ups to the value during an active recording
 u can use /rpy instead of /replay
 
-configs:
-autorecording:
-    automatically starts a new recording if enough players have joined again or on map change if enough players r present
-recorded_ups:
-    how many world_updates per second should be recorded
-file_name:
-    the general file name of the recordings
-        {server} = name of your server
-        {map} = name of recorded map
-        {time} = time and date of start of recording
-
 config.toml copypaste template:
 [replay]
 autorecording = false #change this to true if u always want to record
