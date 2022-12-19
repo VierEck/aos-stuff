@@ -123,7 +123,7 @@ def replay(connection, value, subvalue_one=None, subvalue_two=None, subvalue_thr
     msg = 'Invalid value. for more info type: /rpy help' #we want explicit command use. 
     if value == 'help':
         c.send_lines(replay_help)
-        msg = None
+        return
     elif value == 'on':
         msg = 'recording is already ON'
         if not p.recording:
@@ -153,11 +153,10 @@ def replay(connection, value, subvalue_one=None, subvalue_two=None, subvalue_thr
             if (min_rec_ups <= int(subvalue) <= max_rec_ups) or (min_rec_ups <= int(subvalue) and max_rec_ups == 0):
                 p.record_ups = int(subvalue)
                 msg = 'recorded UPS is set to %.f' % p.record_ups
-    if msg is not None:    
-        if connection.name is not None:
-            msg += '. %s' % connection.name
-        p.irc_say(msg)
-        return msg
+    if connection.name is not None:
+        msg += '. %s' % connection.name
+    p.irc_say(msg)
+    return msg
 
 def apply_script(protocol, connection, config):
     class replayconnection(connection):
