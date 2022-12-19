@@ -33,6 +33,8 @@ file_name:
 config.toml copypaste template:
 [replay]
 autorecording = false #change this to true if u always want to record
+auto_minimum_players_required = 2 #how many players required to justify auto start recording
+command_minimum_players_required = 1 #how many players required to justify command start recording
 recorded_ups = 20
 minimum_recorded_ups = 10
 maximum_recorded_ups = 60 #set this to 0 if u dont want to cap recorded ups
@@ -82,6 +84,8 @@ max_length = replay_config.option('maximum_recording_length', 3600).get()
 replay_help = replay_config.option('replay_help', default=replay_help_default).get()
 gzip_compress = replay_config.option('compress_with_gzip', False).get()
 auto_delete_time = replay_config.option('auto_delete_after_time', 604800).get()
+auto_min_players = replay_config.option('auto_minimum_players_required', 2).get()
+command_min_players = replay_config.option('command_minimum_players_required', 1).get()
 
 if gzip_compress:
     import gzip
@@ -124,7 +128,7 @@ def replay(connection, value, subvalue_one=None, subvalue_two=None, subvalue_thr
         msg = 'recording is already ON'
         if not p.recording:
             msg = 'not enough players'
-            if len(p.connections) >= 1:
+            if len(p.connections) >= command_min_players:
                 msg = 'demo recording turned ON'
                 if subvalue_one is not None:
                     msg += do_subvalue(p, subvalue_one)
@@ -158,7 +162,7 @@ def replay(connection, value, subvalue_one=None, subvalue_two=None, subvalue_thr
 def apply_script(protocol, connection, config):
     class replayconnection(connection):
         def on_disconnect(self):
-            if len(self.protocol.connections) <= 2 and self.protocol.recording:
+            if len(self.protocol.connections) <= auto_min_players and self.protocol.recording:
                 self.protocol.end_recording()
                 self.protocol.irc_say('* demo recording turned OFF. not enough players')
             return connection.on_disconnect(self)
@@ -170,7 +174,7 @@ def apply_script(protocol, connection, config):
             return connection._connection_ack(self)
 
         def on_join(self):
-            if auto_replay and len(self.protocol.connections) >= 2 and not self.protocol.recording:
+            if auto_replay and len(self.protocol.connections) >= auto_min_players and not self.protocol.recording:
                 self.protocol.start_recording()
                 self.protocol.irc_say('* demo recording turned ON. there are enough players now')
             return connection.on_join(self)
@@ -205,7 +209,7 @@ def apply_script(protocol, connection, config):
                 await asyncio.sleep(1/self.record_ups)
         
         def on_map_change(self, map_):
-            if auto_replay and len(self.connections) >= 2 and not self.recording: 
+            if auto_replay and len(self.connections) >= auto_min_players and not self.recording: 
                 self.start_recording()
                 self.irc_say('* demo recording turned ON. there are enough players on map start')
             return protocol.on_map_change(self, map_)
