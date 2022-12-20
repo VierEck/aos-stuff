@@ -54,6 +54,9 @@ from typing import Optional
 from pyspades.constants import CTF_MODE, TC_MODE
 from pyspades.common import make_color
 import asyncio
+from twisted.logger import Logger
+
+log = Logger()
 
 replay_help_default = [
   "/rpy ups <recorded ups>",
@@ -145,6 +148,7 @@ def replay(connection, value, subvalue_one=None, subvalue_two=None, subvalue_thr
     if connection.name is not None:
         msg += '. %s' % connection.name
     p.irc_say(msg)
+    log.info(msg)
     return msg
 
 def apply_script(protocol, connection, config):
@@ -153,6 +157,7 @@ def apply_script(protocol, connection, config):
             if len(self.protocol.connections) <= auto_min_players and self.protocol.recording:
                 self.protocol.end_recording()
                 self.protocol.irc_say('* demo recording turned OFF. not enough players')
+                log.info('demo recording turned OFF. not enough players')
             return connection.on_disconnect(self)
         
         def _connection_ack(self):
@@ -165,6 +170,7 @@ def apply_script(protocol, connection, config):
             if auto_replay and len(self.protocol.connections) >= auto_min_players and not self.protocol.recording:
                 self.protocol.start_recording()
                 self.protocol.irc_say('* demo recording turned ON. there are enough players now')
+                log.info('demo recording turned ON. there are enough players now')
             return connection.on_join(self)
               
     class replayprotocol(protocol):
@@ -191,6 +197,7 @@ def apply_script(protocol, connection, config):
                             if self.record_length <= (time() - self.start_time):
                                 self.end_recording()
                                 self.irc_say('* demo recording has turned OFF after %.f seconds' % self.record_length)
+                                log.info('demo recording has turned OFF after %.f seconds' % self.record_length)
                             self.last_length_check = time()
                     else:
                         if max_length != 0:
@@ -199,6 +206,7 @@ def apply_script(protocol, connection, config):
                                     self.end_recording()
                                     self.start_recording()
                                     self.irc_say('* demo recording ended and restarted. maximum length has been reached')
+                                    log.info('demo recording ended and restarted. maximum length has been reached')
                                 self.last_length_check = time()
                     if self.write_broadcast:
                         self.write_ups()
@@ -208,6 +216,7 @@ def apply_script(protocol, connection, config):
             if auto_replay and len(self.connections) >= auto_min_players and not self.recording: 
                 self.start_recording()
                 self.irc_say('* demo recording turned ON. there are enough players on map start')
+                log.info('demo recording turned ON. there are enough players on map start')
             return protocol.on_map_change(self, map_)
         
         def on_map_leave(self):
@@ -215,6 +224,7 @@ def apply_script(protocol, connection, config):
                 self.end_recording()
                 self.delete_old_demos()
                 self.irc_say('* demo recording turned OFF. map ended')
+                log.info('demo recording turned OFF. map ended')
             return protocol.on_map_leave(self)
         
         def create_demo_file(self):
