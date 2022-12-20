@@ -38,7 +38,8 @@ auto_delete_after_time = 604800 #=1week (in seconds). set this to 0 if u want to
 replay_help = [
   "/rpy ups <recorded ups>",
   "/rpy off",
-  "/rpy on <filename> <recording length> <recorded ups>",
+  "/rpy on <*filename> <*recording length> <*recorded ups>",
+  "* -> optional",
   "use these commands:",
 ]
 '''
@@ -64,7 +65,8 @@ log = Logger()
 replay_help_default = [
   "/rpy ups <recorded ups>",
   "/rpy off",
-  "/rpy on <filename> <recording length> <recorded ups>",
+  "/rpy on <*filename> <*recording length> <*recorded ups>",
+  "* -> optional",
   "use these commands:",
 ]
 
