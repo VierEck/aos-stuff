@@ -253,10 +253,9 @@ def apply_script(protocol, connection, config):
             if self.custom_file_name is not None:
                 self.replay_filename = self.custom_file_name
                 self.custom_file_name = None
+            self.replay_filename += '.demo'
             if gzip_compress:
-                self.replay_filename += '.demo.gz'
-            else:
-                self.replay_filename += '.demo'
+                self.replay_filename += '.gz'
             self.replayfile = os.path.join(get_replays_dir(), self.replay_filename)
         
         def delete_old_demos(self):
