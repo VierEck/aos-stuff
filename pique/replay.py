@@ -161,8 +161,8 @@ def apply_script(protocol, connection, config):
         def on_disconnect(self):
             if len(self.protocol.connections) <= auto_min_players and self.protocol.recording:
                 self.protocol.end_recording()
-                self.protocol.irc_say('* demo recording turned OFF. not enough players')
-                log.info('demo recording turned OFF. not enough players')
+                self.protocol.irc_say('* demo turned OFF. not enough players')
+                log.info('demo turned OFF. not enough players')
             return connection.on_disconnect(self)
         
         def _connection_ack(self):
@@ -175,8 +175,8 @@ def apply_script(protocol, connection, config):
             if auto_replay and len(self.protocol.connections) >= auto_min_players and not self.protocol.recording:
                 self.protocol.start_recording()
                 self.protocol.is_auto = True
-                self.protocol.irc_say('* demo recording turned ON. there are enough players now')
-                log.info('demo recording turned ON. there are enough players now')
+                self.protocol.irc_say('* demo turned ON. there are enough players now')
+                log.info('demo turned ON. there are enough players now')
             return connection.on_join(self)
             
         def send_replay_help(self):
@@ -207,17 +207,21 @@ def apply_script(protocol, connection, config):
                         if time() - self.last_length_check >= 1:
                             if self.record_length <= (time() - self.start_time):
                                 self.end_recording()
-                                self.irc_say('* demo recording has turned OFF after %.f seconds' % self.record_length)
-                                log.info('demo recording has turned OFF after %.f seconds' % self.record_length)
+                                self.irc_say('* demo turned OFF after %.f seconds' % self.record_length)
+                                log.info('demo turned OFF after %.f seconds' % self.record_length)
                             self.last_length_check = time()
                     else:
                         if max_length != 0:
                             if time() - self.last_length_check >= 1:
                                 if max_length <= (time() - self.start_time):
                                     self.end_recording()
-                                    self.start_recording()
-                                    self.irc_say('* demo recording ended and restarted. maximum length has been reached')
-                                    log.info('demo recording ended and restarted. maximum length has been reached')
+                                    self.irc_say('* demo ended. maximum length has been reached')
+                                    log.info('demo ended. maximum length has been reached')
+                                    if auto_replay:
+                                        self.start_recording()
+                                        self.is_auto = True
+                                        self.irc_say('* demo restarted. autorecording after maximum length reach')
+                                        log.info('demo restarted. autorecording after maximum length reach')
                                 self.last_length_check = time()
                     if self.write_broadcast:
                         self.write_ups()
@@ -227,16 +231,16 @@ def apply_script(protocol, connection, config):
             if auto_replay and len(self.connections) >= auto_min_players and not self.recording: 
                 self.start_recording()
                 is_auto = True
-                self.irc_say('* demo recording turned ON. there are enough players on map start')
-                log.info('demo recording turned ON. there are enough players on map start')
+                self.irc_say('* demo turned ON. there are enough players on map start')
+                log.info('demo turned ON. there are enough players on map start')
             return protocol.on_map_change(self, map_)
         
         def on_map_leave(self):
             if self.recording:
                 self.end_recording()
                 self.delete_old_demos()
-                self.irc_say('* demo recording turned OFF. map ended')
-                log.info('demo recording turned OFF. map ended')
+                self.irc_say('* demo turned OFF. map ended')
+                log.info('demo turned OFF. map ended')
             return protocol.on_map_leave(self)
         
         def create_demo_file(self):
@@ -249,14 +253,13 @@ def apply_script(protocol, connection, config):
                 fn = fn.replace('{map}', self.map_info.rot_info.name)
             if '{time}' in fn:
                 fn = fn.replace('{time}', datetime.now().strftime('%Y-%m-%d_%H-%M-%S_'))
-            self.replay_filename = fn
             if self.custom_file_name is not None:
-                self.replay_filename = self.custom_file_name
+                fn = self.custom_file_name
                 self.custom_file_name = None
-            self.replay_filename += '.demo'
+            fn += '.demo'
             if gzip_compress:
-                self.replay_filename += '.gz'
-            self.replayfile = os.path.join(get_replays_dir(), self.replay_filename)
+                fn += '.gz'
+            self.replayfile = os.path.join(get_replays_dir(), fn)
         
         def delete_old_demos(self):
             if auto_delete_time == 0:
@@ -275,6 +278,8 @@ def apply_script(protocol, connection, config):
                 log.info('demo deleted. too short')
                     
         def start_recording(self):
+            if self.recording:
+                return
             self.create_demo_file()
             if gzip_compress:
                 self.replay_file = gzip.open(self.replayfile, 'wb')
@@ -288,6 +293,8 @@ def apply_script(protocol, connection, config):
             self.recording = True
         
         def end_recording(self):
+            if not self.recording:
+                return
             self.record_loop_task.cancel()
             self.record_loop_task = None
             self.record_ups = rec_ups
