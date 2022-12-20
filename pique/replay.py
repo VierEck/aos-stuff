@@ -150,7 +150,6 @@ def replay(connection, value, subvalue_one=None, subvalue_two=None, subvalue_thr
     if connection.name is not None:
         msg += '. %s' % connection.name
     p.irc_say(msg)
-    log.info(msg)
     return msg
 
 def apply_script(protocol, connection, config):
