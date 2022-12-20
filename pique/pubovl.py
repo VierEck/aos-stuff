@@ -22,13 +22,13 @@ of ammo and blocks.
     side. 
 '''
 
-from piqueserver.commands import command, target_player, get_player
+from piqueserver.commands import command, target_player
 from pyspades.common import Vertex3, make_color
 from pyspades.constants import WEAPON_TOOL, WEAPON_KILL
 from pyspades import contained as loaders
 from pyspades import world
 from piqueserver.scheduler import Scheduler
-from ipaddress import AddressValueError, IPv4Address, ip_address
+from ipaddress import ip_address
 
 
 @command('pubovl', 'ovl', admin_only=True)
