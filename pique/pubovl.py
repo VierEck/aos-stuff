@@ -201,20 +201,16 @@ def apply_script(protocol, connection, config):
                 by.add_score(1)
             kill_action.respawn_time = self.get_respawn_time() + 1
             
-            kill_deuce = loaders.KillAction()
-            kill_deuce.kill_type = kill_type
-            kill_deuce.player_id = self.protocol.deuce_id
-            if by is None:
-                kill_deuce.killer_id = kill_deuce.player_id = self.protocol.deuce_id
-            else:
-                kill_deuce.killer_id = by.player_id
-                kill_deuce.player_id = self.protocol.deuce_id
-            kill_deuce.respawn_time = self.get_respawn_time() + 1
-            
             if self.hidden: 
                 self.protocol.broadcast_contained(kill_action, sender=self, save=True) 
                 if self.deuce_spawned:
-                    self.send_contained(kill_deuce)
+                    deuce_id = self.protocol.deuce_id
+                    if by is None:
+                        kill_action.killer_id = kill_action.player_id = deuce_id
+                    else:
+                        kill_action.killer_id = by.player_id
+                        kill_action.player_id = deuce_id
+                    self.send_contained(kill_action)
                 if by is not None:
                     self.send_chat('[pubovl]: you were killed by %s' % by.name)
             else:
