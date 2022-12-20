@@ -262,6 +262,9 @@ def apply_script(protocol, connection, config):
             else:
                 if self.hidden: 
                     self.protocol.broadcast_contained(create_player, sender=self,save=True)
+                    if self.deuce_spawned:
+                        create_player.player_id = self.protocol.deuce_id
+                        self.send_contained(create_player)
                 else:
                     self.protocol.broadcast_contained(create_player, save=True)
             if not spectator:
