@@ -29,7 +29,7 @@ minimum_recorded_ups = 10
 maximum_recorded_ups = 60 #set this to 0 if u dont want to cap recorded ups
 minimum_recording_length = 30
 maximum_recording_length = 3600 #=1hour (in seconds). set this to 0 if u dont want to cap recording length
-auto_minimum_length_to_save = 300 #=5minutues (in seconds). set how long a recording should be to save it when autorecording. 
+auto_minimum_length_to_save = 300 #=5minutues (in seconds). set this to 0 if u want to keep short demos
 file_name = "rpy_{server}_{time}_{map}"
 compress_with_gzip = false
 auto_delete_after_time = 604800 #=1week (in seconds). set this to 0 if u want to keep old recordings. 
