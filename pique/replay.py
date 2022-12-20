@@ -3,6 +3,8 @@ latest version of replay.py: https://github.com/VierEck/aos-scripts/blob/main/pi
 LICENSE: GPL-3.0
 codeauthors: VierEck., DryByte (https://github.com/DryByte)
 
+more info about the script: https://aloha.pk/t/script-replay-py-server-side-gameplay-recorder-for-pique/23128
+
 original aos_replay by BR: (https://github.com/BR-/aos_replay)
 
 recordings resulting from this script r compatible with BR's
