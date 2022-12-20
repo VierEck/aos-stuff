@@ -192,6 +192,14 @@ def apply_script(protocol, connection, config):
                                 self.end_recording()
                                 self.irc_say('* demo recording has turned OFF after %.f seconds' % self.record_length)
                             self.last_length_check = time()
+                    else:
+                        if max_length != 0:
+                            if time() - self.last_length_check >= 1:
+                                if max_length <= (time() - self.start_time):
+                                    self.end_recording()
+                                    self.start_recording()
+                                    self.irc_say('* demo recording ended and restarted. maximum length has been reached')
+                                self.last_length_check = time()
                     if self.write_broadcast:
                         self.write_ups()
                 await asyncio.sleep(1/self.record_ups)
