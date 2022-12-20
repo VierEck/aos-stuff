@@ -118,7 +118,7 @@ def replay(connection, value, subvalue_one=None, subvalue_two=None, subvalue_thr
     value = value.lower()
     msg = 'Invalid value. for more info type: /rpy help' #we want explicit command use. 
     if value == 'help':
-        c.send_lines(replay_help)
+        c.send_replay_help()
         return
     elif value == 'on':
         msg = 'recording is already ON'
@@ -176,6 +176,10 @@ def apply_script(protocol, connection, config):
                 self.protocol.irc_say('* demo recording turned ON. there are enough players now')
                 log.info('demo recording turned ON. there are enough players now')
             return connection.on_join(self)
+            
+        def send_replay_help(self):
+            for lines in replay_help:
+                self.send_chat(lines)
               
     class replayprotocol(protocol):
         recording = False
