@@ -29,6 +29,7 @@ minimum_recorded_ups = 10
 maximum_recorded_ups = 60 #set this to 0 if u dont want to cap recorded ups
 minimum_recording_length = 30
 maximum_recording_length = 3600 #=1hour (in seconds). set this to 0 if u dont want to cap recording length
+auto_minimum_length_to_save = 300 #=5minutues (in seconds). set how long a recording should be to save it when autorecording. 
 file_name = "rpy_{server}_{time}_{map}"
 compress_with_gzip = false
 auto_delete_after_time = 604800 #=1week (in seconds). set this to 0 if u want to keep old recordings. 
@@ -78,6 +79,7 @@ gzip_compress = replay_config.option('compress_with_gzip', False).get()
 auto_delete_time = replay_config.option('auto_delete_after_time', 604800).get()
 auto_min_players = replay_config.option('auto_minimum_players_required', 2).get()
 command_min_players = replay_config.option('command_minimum_players_required', 1).get()
+auto_min_length_save = replay_config.option('auto_minimum_length_to_save', 300).get()
 
 if gzip_compress:
     import gzip
@@ -169,6 +171,7 @@ def apply_script(protocol, connection, config):
         def on_join(self):
             if auto_replay and len(self.protocol.connections) >= auto_min_players and not self.protocol.recording:
                 self.protocol.start_recording()
+                self.protocol.is_auto = True
                 self.protocol.irc_say('* demo recording turned ON. there are enough players now')
                 log.info('demo recording turned ON. there are enough players now')
             return connection.on_join(self)
@@ -184,6 +187,7 @@ def apply_script(protocol, connection, config):
         saved_packets = None
         custom_file_name = None
         recorder_id = 33
+        is_auto = False
 
         async def record_loop(self):
             while True:
@@ -215,6 +219,7 @@ def apply_script(protocol, connection, config):
         def on_map_change(self, map_):
             if auto_replay and len(self.connections) >= auto_min_players and not self.recording: 
                 self.start_recording()
+                is_auto = True
                 self.irc_say('* demo recording turned ON. there are enough players on map start')
                 log.info('demo recording turned ON. there are enough players on map start')
             return protocol.on_map_change(self, map_)
@@ -254,6 +259,14 @@ def apply_script(protocol, connection, config):
                 if '.demo' in f:
                     if os.stat(os.path.join(get_replays_dir(), f)).st_mtime < time() - auto_delete_time:
                         os.remove(os.path.join(get_replays_dir(), f))
+            
+        def auto_delete_if_too_small(self):
+            if auto_min_length_save == 0 or not self.is_auto:
+                return
+            if auto_min_length_save > (time() - self.start_time):
+                os.remove(self.replayfile)
+                self.irc_say('* demo deleted. too short')
+                log.info('demo deleted. too short')
                     
         def start_recording(self):
             self.create_demo_file()
@@ -276,6 +289,8 @@ def apply_script(protocol, connection, config):
             self.recording = False
             self.replay_file.close()
             self.record_length = None
+            self.auto_delete_if_too_small()
+            self.is_auto = False
         
         def write_pack(self, contained):
             data = ByteWriter()
