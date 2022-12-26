@@ -206,9 +206,9 @@ def apply_script(protocol, connection, config):
                     if self.record_length is not None:
                         if time() - self.last_length_check >= 1:
                             if self.record_length <= (time() - self.start_time):
-                                self.end_recording()
                                 self.irc_say('* demo turned OFF after %.f seconds' % self.record_length)
                                 log.info('demo turned OFF after %.f seconds' % self.record_length)
+                                self.end_recording()
                             self.last_length_check = time()
                     else:
                         if max_length != 0:
