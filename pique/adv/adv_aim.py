@@ -3,6 +3,8 @@ Copyrights for portions of this file are held by one or more contributors from t
 LICENSE: GPL-3.0
 author: VierEck.
 
+latest version: https://github.com/VierEck/aos-scripts/blob/main/pique/adv/adv_aim.py
+
 prerequisite for gamemodes or other scripts. 
 make sure to load prerequisites first in script order. 
 this script is intended to be used in the adventure gamemode. 
@@ -11,7 +13,8 @@ since i dont see much use for it other than in a "single-player" experience.
 it can stand on its own however. use following commands and config settings 
 to extend the experience and fun to ur liking on ur server. 
 
-manipulate the player's aim and fov. openspades exclusive. 
+manipulate the player's aim and field of view. exclusively only works for openspades clients. 
+
 
 config.toml copypaste template:
 [adv_aim]
@@ -33,8 +36,6 @@ from pyspades.common import Vertex3
 from pyspades.collision import distance_3d_vector
 from pyspades import contained as loaders
 import asyncio
-import time
-from math import cos, sin
 
 adv_aim_config = config.section('adv_aim')
 
@@ -76,6 +77,9 @@ def advaim(connection, value, subvalue=None):
     elif value == 'stable':
         c.adv_aim_soft_stable = not c.adv_aim_soft_stable
         msg = 'soft aimbot speed now set to %s' % ('consistent' if c.adv_aim_soft_stable else 'dynamic')
+    
+    else:
+        return 'invalid value'
         
     return msg
 
@@ -83,19 +87,21 @@ def advaim(connection, value, subvalue=None):
 def advaim(connection, value, subvalue=None):
     '''
     staff command. configurate the global/protocol adv_aim settings. 
-    if individual settings r allowed this has no effect on the players. 
     '''
     c = connection
     p = c.protocol
     value = value.lower()
     if value == 'individual':
         p.adv_aim_aimbot_individual_config = not p.adv_aim_aimbot_individual_config
+        for player in p.players.values():
+            player.adv_aim_set_individual_config()
         msg = 'WARNING!! individual configs turned %s' % ('on' if p.adv_aim_aimbot_individual_config else 'off')
-    
+               #this command will always reset everyones individual settings. so be careful.
     elif value == 'aimbot':
         p.adv_aim_ab = not p.adv_aim_ab
+        p.adv_aim_manage_loop(start_end=True) if p.adv_aim_ab else p.adv_aim_manage_loop(start_end=False)
         msg = 'WARNING!! global aimbot turned %s' % ('on' if p.adv_aim_ab else 'off')
-            
+               #u dont want to accidentally turn this on in a legit match lol. so be careful. 
     elif value == 'type':
         p.adv_aim_ab_type = subvalue.lower()
         msg = 'global aimbot_type set to %s' % p.adv_aim_ab_type
@@ -119,6 +125,9 @@ def advaim(connection, value, subvalue=None):
     elif value == 'stable':
         p.adv_aim_soft_stable = not p.adv_aim_soft_stable
         msg = 'global soft aimbot speed now set to %s' % ('consistent' if p.adv_aim_soft_stable else 'dynamic')
+    
+    else:
+        return 'invalid value'
         
     p.irc_say('* %s' % msg)
     return msg
@@ -255,6 +264,7 @@ def apply_script(protocol, connection, config):
             '''
             get target nearest to player on map. 
             '''
+            target = None
             nougat = 512
             if friendlyfire:
                 player_list = self.protocol.players.values() 
@@ -273,6 +283,7 @@ def apply_script(protocol, connection, config):
             '''
             get targest nearest to the player's sight/crosshair. 
             '''
+            target = None
             nougat = 512
             if friendlyfire:
                 player_list = self.protocol.players.values() 
@@ -355,12 +366,12 @@ def apply_script(protocol, connection, config):
                             priority = self.adv_aim_target_priority
                             speed = self.adv_aim_soft_speed
                             stable = self.adv_aim_soft_stable
-                        if aimbot:
+                        if aimbot and player.tool == 2: #2 = WEAPON_TOOL
                             if (key == 'sneak' and player.world_object.sneak) or (key == 'scope' and player.world_object.secondary_fire):
                                 if ab_type == 'hard':
                                     player.adv_aim_hard_aimbot(friendlyfire, priority)
                                 if ab_type == 'soft':
-                                    player.adv_aim_soft_aimbot(speed, friendlyfire, priority, stable)
+                                    player.adv_aim_soft_aimbot(speed=speed, friendlyfire=friendlyfire, sight=priority, stable=stable)
                 await asyncio.sleep(1/ups)
         
         def adv_aim_manage_loop(self, start_end=False, ups=60):
