@@ -369,7 +369,7 @@ def apply_script(protocol, connection, config):
                         if aimbot and player.tool == 2: #2 = WEAPON_TOOL
                             if (key == 'sneak' and player.world_object.sneak) or (key == 'scope' and player.world_object.secondary_fire):
                                 if ab_type == 'hard':
-                                    player.adv_aim_hard_aimbot(friendlyfire, priority)
+                                    player.adv_aim_hard_aimbot(friendlyfire=friendlyfire, sight=priority)
                                 if ab_type == 'soft':
                                     player.adv_aim_soft_aimbot(speed=speed, friendlyfire=friendlyfire, sight=priority, stable=stable)
                 await asyncio.sleep(1/ups)
