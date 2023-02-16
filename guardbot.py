@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 '''
-author: VierEck.
+portions of this file are from BR's original script: https://github.com/BR-/aos_replay
 
 GuardBot. 
 record gameplay from a server around the clock. 
 afterwards, review the demos with BR's Playback.py. 
 
-original script: https://github.com/BR-/aos_replay
+author: VierEck.
 '''
 
 FOLDER = "demos"                    #where the demos of ur server r stored and handled. 
