@@ -9,18 +9,18 @@ afterwards, review the demos with BR's Playback.py.
 original script: https://github.com/BR-/aos_replay
 '''
 
-FOLDER = "demos"					#where the demos of ur server r stored and handled. 
-FILE_NAME = "ur_server_{time}"		#{time} -> time of start of recording, this is important so that files wont overwrite and r distinguishable. 
-SERVER_NAME = "ur_server"			#needed to print some console messages. 
-SERVER_URL = "aos://16777343:32887"	#needed for search on master.
-MIN_LENGTH = 60						#how long a demo should be to not get deleted. u dont want to clutter ur system with mostly map junk. 
-MAX_LENGTH = 600					#how long a demo should be till ended. recommended since fast forwarding demos too much can break some clients. 
-MAX_AGE = 604800					#how old demos get till they get deleted. (in seconds. everythings in seconds here) (604800 = a week)
-SEARCH_PERIOD = 15					#pause time between iterations.
-MIN_PLAYERS = 4						#4 is the bare minimum. no less than that is worth ur resources imo.
-AFK_PERIOD = 60						#time between input changes to delay afk kick.
-test = False						#for test runs. if u dont want ur folder to be cluttered with mere test demos.
-test_url = "aos://16777343:32887"	#for test runs. ur testing server. 
+FOLDER = "demos"                    #where the demos of ur server r stored and handled. 
+FILE_NAME = "ur_server_{time}"      #{time} -> time of start of the demo, this is important so that files wont overwrite and r distinguishable. 
+SERVER_NAME = "ur_server"           #needed to print some console messages. 
+SERVER_URL = "aos://16777343:32887" #needed for search on master.
+MIN_LENGTH = 60                     #how long a demo should be to not get deleted. u dont want to clutter ur system with mostly map junk. 
+MAX_LENGTH = 600                    #how long a demo should be till ended. recommended since fast forwarding demos too much can break some clients. 
+MAX_AGE = 604800                    #how old demos get till they get deleted. (in seconds. everythings in seconds here) (604800 = a week)
+SEARCH_PERIOD = 15                  #pause time between iterations.
+MIN_PLAYERS = 4                     #4 is the bare minimum. no less than that is worth ur resources imo.
+AFK_PERIOD = 60                     #time between input changes to delay afk kick.
+test = False                        #for test runs. if u dont want ur folder to be cluttered with mere test demos.
+test_url = "aos://16777343:32887"   #for test runs. ur testing server. 
 
 
 import urllib.request, json
