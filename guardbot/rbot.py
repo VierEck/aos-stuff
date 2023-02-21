@@ -2,7 +2,7 @@
 '''
 portions of this file are from BR's original script: https://github.com/BR-/aos_replay
 
-GuardBot. 
+RecordBot. 
 record gameplay from a server around the clock. 
 afterwards, review the demos with BR's Playback.py. 
 
