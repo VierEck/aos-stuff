@@ -10,7 +10,7 @@ author: VierEck.
 '''
 
 FOLDER = "demos"                    #where the demos of ur server r stored and handled. 
-FILE_NAME = "ur_server_{time}"      #{time} -> time of start of the demo, this is important so that files wont overwrite and r distinguishable. 
+FILE_NAME = "{time}_ur_server"      #{time} -> time of start of the demo, this is important so that files wont overwrite and r distinguishable. 
 SERVER_NAME = "ur_server"           #needed to print some console messages. 
 SERVER_URL = "aos://16777343:32887" #needed for search on master.
 MIN_LENGTH = 60                     #how long a demo should be to not get deleted. u dont want to clutter ur system with mostly map junk. 
