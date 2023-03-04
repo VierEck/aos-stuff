@@ -9,18 +9,18 @@ afterwards, review the demos with BR's Playback.py.
 author: VierEck.
 '''
 
-FOLDER = "demos"                    #where the demos of ur server r stored and handled. 
-FILE_NAME = "{time}_ur_server"      #{time} -> time of start of the demo, this is important so that files wont overwrite and r distinguishable. 
-SERVER_NAME = "ur_server"           #needed to print some console messages. 
-SERVER_URL = "aos://16777343:32887" #needed for search on master.
-MIN_LENGTH = 60                     #how long a demo should be to not get deleted. u dont want to clutter ur system with mostly map junk. 
-MAX_LENGTH = 600                    #how long a demo should be till ended. recommended since fast forwarding demos too much can break some clients. 
-MAX_AGE = 604800                    #how old demos get till they get deleted. (in seconds. everythings in seconds here) (604800 = a week)
-SEARCH_PERIOD = 15                  #pause time between iterations.
-MIN_PLAYERS = 4                     #4 is the bare minimum. no less than that is worth ur resources imo.
-AFK_PERIOD = 60                     #time between input changes to delay afk kick.
-test = False                        #for test runs. if u dont want ur folder to be cluttered with mere test demos.
-test_url = "aos://16777343:32887"   #for test runs. ur testing server. 
+FOLDER = "demos"                         #where the demos of ur server r stored and handled. 
+FILE_NAME = "urserver"                   #-> [Time]_urserver_[length]
+SERVER_NAME = "urserver"                 #needed to print some console messages. 
+SERVER_URL = "aos://16777343:32887"      #needed for search on master.
+MIN_LENGTH = 60                          #demo deleted if shorter than this. 
+MAX_LENGTH = 600                         #if demo reaches this length will be automatically ended. then a new demo will be restarted
+MAX_AGE = 604800                         #how old demos get till they get deleted.
+SEARCH_PERIOD = 15                       #pause time between iterations.
+MIN_PLAYERS = 4                          #4 is the bare minimum. no less than that is worth ur resources imo.
+AFK_PERIOD = 60                          #time between input changes to delay afk kick.
+test = False                             #for test runs. 
+test_url = "aos://16777343:32887"        #for test runs. 
 
 
 import urllib.request, json
@@ -68,11 +68,11 @@ def write_state():
 	fh.write(event.packet.data[2:])
 
 def signature():
-	msg = 'This demo was recorded with guardbot.py by VierEck.'.encode('cp437', 'replace')
+	msg = 'This demo was recorded with rbot.py by VierEck.'.encode('cp437', 'replace')
 	pkt = struct.pack('bbb', 17, record_id, 2) + msg
 	fh.write(struct.pack('fH', time.time() - start_time, len(pkt)))
 	fh.write(pkt)
-				
+	
 #
 while True:
 	ip = port = None
@@ -126,17 +126,16 @@ while True:
 			except NameError:
 				print('search delayed. server not found: ' + SERVER_NAME)
 				print('-                               : ' + SERVER_URL)
-			import time
-			time.sleep(SEARCH_PERIOD)
+			time.sleep(SEARCH_PERIOD) 
+		#if not found there is no point int trying to connect anyways imo.
+		#in an event the server is online despite not on list its likely empty anyways. 
 
 	#do the file
-	file = FILE_NAME
-	if '{time}' in file:
-		file = file.replace('{time}', datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
-	file += '.demo'
-	file = os.path.join(folder, file)
 	if test:
 		file = 'test.demo'
+	else:
+		file = datetime.now().strftime('[%Y-%m-%d-%H-%M-%S]_') + FILE_NAME + '_[].demo'
+		file = os.path.join(folder, file)
 		
 	#connect and record
 	con = enet.Host(None, 1, 1)
@@ -220,12 +219,17 @@ while True:
 							break
 						check_stuff = time.time()
 	
-	#delete recording if too small or old
-	if time.time() - time_since_limbo < MIN_LENGTH:
-		os.remove(file)
-		print('deleted recording. too short')
+	#delete recording if too short or old
+	if not test:
+		if time.time() - time_since_limbo < MIN_LENGTH:
+			os.remove(file)
+			print('deleted recording. too short')
+		else:
+			length = (time.time() - start_time) / 60
+			add_length = file.replace('[].demo', '[%.0f].demo' % length)
+			os.rename(file, add_length)
 	for f in os.listdir(folder):
-		if '.demo' in f:
+		if '.demo' in f: 
 			if os.stat(os.path.join(folder, f)).st_mtime < time.time() - MAX_AGE:
 				os.remove(os.path.join(folder, f))
 	
