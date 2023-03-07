@@ -143,7 +143,7 @@ class Server(object):
 									event.peer.send(0, enet.Packet(pkt, enet.PACKET_FLAG_RELIABLE))
 								dead = limbo = crouched = False
 								#signature
-								msg = 'This demo was recorded with rbot.py by VierEck.'.encode('cp437', 'replace')
+								msg = 'This demo was recorded with mrbot.py by VierEck.'.encode('cp437', 'replace')
 								pkt = struct.pack('bbb', 17, record_id, 2) + msg
 								fh.write(struct.pack('fH', time.time() - start_time, len(pkt)))
 								fh.write(pkt)
