@@ -15,6 +15,8 @@ original scripts by BR: https://github.com/BR-/aos_replay
   - ##### rbot.py: RecordBot
       - records gameplay from a specific server when its listed on master. 
   - ##### mrbot.py: MultiRecordBot
-      - records gameplay from multiple servers. customizable with the config.toml
+      - records gameplay from multiple servers. 
+      - customizable with the config.toml
   - ##### pbot.py: PlaybackBot
       - plays back demos. creates a sort of server that can be joined to and operated from with ur aos client. 
+      - customizable with the config.toml
