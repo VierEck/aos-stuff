@@ -1,0 +1,28 @@
+#GuardBot config file.
+
+[[server]]
+	folder       = "example_folder"
+	server_name  = "example_server" #also in file name
+	server_url   = "aos://16777343:32887"
+	min_players  = 4       #doesnt start recording if server has less than this amount of players.
+	afk_period   = 60      #sleeping period between triggering afk_behavior.
+	afk_behavior = "input" #ocelate between crouching and standing. behavior shifts to chat if dead.
+	min_length    = 60     #deletes if demo too short
+	max_length    = 600    #automatically ends and starts new demo when max is hit
+	max_age       = 604800 # = a week (in seconds)
+	search_period = 15     #to prevent spamming master with requests
+
+[[server]]
+	folder       = "another_example_folder" #u can use one folder for multiple servers aswell
+	server_name  = "another_example_server"
+	server_url   = "aos://16777343:32888"
+	min_players  = 6
+	afk_period   = 120
+	afk_behavior = "chat"
+	min_length    = 30
+	max_length    = 1200
+	max_age       = 259200 # = 3 days
+	search_period = 15
+	
+#and repeat to add more servers. 
+
