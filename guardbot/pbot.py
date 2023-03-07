@@ -19,22 +19,30 @@ commands:
 	
 	
 author: VierEck.
-'''
+''' 
 
-PASSWORD = "changeme"
-LOGIN_TIME = 30          #if dont login within that time u get kicked
-KICK_AFK = 60            #kicked if afk too long at home. 
-MAX_CONNECTIONS = 10
-LOGIN_ATTEMPT = 3
-PORT = 32887
-HOME = "flatmap.vxldemo" #i forgot who made the vxl version. 
-
-
+import toml
 import os
 import time
 import struct
 import enet
 from datetime import datetime
+
+try:
+	config = toml.load('config.toml')
+except:
+	print('abort. no config.toml or invalid config content')
+	import sys
+	sys.exit(1)
+
+for cfg in config["playback"]:
+	PASSWORD        = cfg['password']
+	LOGIN_TIME      = cfg["login_time"]
+	KICK_AFK        = cfg["kick_afk"]
+	MAX_CONNECTIONS = cfg["max_connections"]
+	LOGIN_ATTEMPT   = cfg["login_attempt"]
+	PORT            = cfg["port"]
+	HOME            = cfg["home"]
 
 FILE_VERSION = 1
 AOS_VERSION = 3
