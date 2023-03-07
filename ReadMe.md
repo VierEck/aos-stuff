@@ -11,6 +11,7 @@ LICENSE: GPL-3.0
   - records gameplay on ur server. can be used as a staff tool to view recorded past occurences of cheating. 
 
 #### GuardBot:
+original scripts by BR: https://github.com/BR-/aos_replay
   - ##### rbot.py:
       - records gameplay from a specific server when its listed on master. 
   - ##### pbot.py:
