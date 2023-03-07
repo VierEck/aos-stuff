@@ -206,7 +206,6 @@ class Server(object):
 
 servers    = {}
 server_id  = 0
-found_list = 0
 for sv in config['server']:
 	servers[server_id] = Server(sv)
 	server_id += 1
