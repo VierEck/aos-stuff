@@ -12,7 +12,9 @@ LICENSE: GPL-3.0
 
 #### GuardBot:
 original scripts by BR: https://github.com/BR-/aos_replay
-  - ##### rbot.py:
+  - ##### rbot.py: RecordBot
       - records gameplay from a specific server when its listed on master. 
-  - ##### pbot.py:
+  - ##### mrbot.py: MultiRecordBot
+      - records gameplay from multiple servers. customizable with the config.toml
+  - ##### pbot.py: PlaybackBot
       - plays back demos. creates a sort of server that can be joined to and operated from with ur aos client. 
