@@ -35,14 +35,14 @@ except:
 	import sys
 	sys.exit(1)
 
-for cfg in config["playback"]:
-	PASSWORD        = cfg['password']
-	LOGIN_TIME      = cfg["login_time"]
-	KICK_AFK        = cfg["kick_afk"]
-	MAX_CONNECTIONS = cfg["max_connections"]
-	LOGIN_ATTEMPT   = cfg["login_attempt"]
-	PORT            = cfg["port"]
-	HOME            = cfg["home"]
+config = config["playback"][0]
+PASSWORD        = config['password']
+LOGIN_TIME      = config["login_time"]
+KICK_AFK        = config["kick_afk"]
+MAX_CONNECTIONS = config["max_connections"]
+LOGIN_ATTEMPT   = config["login_attempt"]
+PORT            = config["port"]
+HOME            = config["home"]
 
 FILE_VERSION = 1
 AOS_VERSION = 3
@@ -317,6 +317,8 @@ while True:
 				if data[3:4].decode('cp437') == "/":
 					chat = data[4:-1].decode('cp437', 'replace')
 					handle_command(cl, chat)
+					continue
+				if "login" in data[3:].decode('cp437'):
 					continue
 			#broadcast packet
 			for client in list(clients.values()):
