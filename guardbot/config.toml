@@ -24,16 +24,28 @@
 	search_period = 15               #to prevent spamming master with requests
 
 [[server]]
-	folder        = "another_example_folder" #u can use one folder for multiple servers aswell
+	folder        = "another_example_folder" #u can use one folder for multiple servers aswell. but i dont recommend
 	server_name   = "another_example_server"
 	server_url    = "aos://16777343:32888"
 	min_players   = 6
 	afk_period    = 120
-	afk_behavior  = "chat"
+	afk_behavior  = "chat" #sends empty chat message in team chat
 	min_length    = 30
 	max_length    = 1200
 	max_age       = 259200 # = 3 days
 	search_period = 15
+
+[[server]]
+	folder        = "even_another_example_folder"
+	server_name   = "even_another_example_server"
+	server_url    = "aos://16777343:32889"
+	min_players   = 4
+	afk_period    = 240
+	afk_behavior  = "spec" #joins spectator and sends empty chat message in spectator team chat
+	min_length    = 120
+	max_length    = 2400
+	max_age       = 259200
+	search_period = 30
 	
 #and repeat to add more servers. 
 

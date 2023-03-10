@@ -125,9 +125,13 @@ class Server(object):
 						fh.write(event.packet.data)
 						if event.packet.data[0] == 16: #killaction
 							if limbo:
-								#send join
-								pkt = struct.pack('BBbBBI', 9, 0, 0, 0, 2, 0) + 'Deuce'.encode('cp437')
-								event.peer.send(0, enet.Packet(pkt, enet.PACKET_FLAG_RELIABLE))
+								#send join on killaction. only join if there is actually some action going down
+								if self.afk_behavior == 'spec': #join as spectator
+									pkt = struct.pack('BBBBBI', 9, 0, 255, 0, 2, 0) + 'Deuce'.encode('cp437')
+									event.peer.send(0, enet.Packet(pkt, enet.PACKET_FLAG_RELIABLE))
+								else: #join as blue/team1
+									pkt = struct.pack('BBBBBI', 9, 0, 0, 0, 2, 0) + 'Deuce'.encode('cp437')
+									event.peer.send(0, enet.Packet(pkt, enet.PACKET_FLAG_RELIABLE))
 							if event.packet.data[1] == local_player_id:
 								dead = True
 						if event.packet.data[0] == 12: #createplayer
@@ -158,8 +162,8 @@ class Server(object):
 						if connected:
 							if not limbo:
 								if time.time() >= delay_afk + self.afk_period:
-									if self.afk_behavior == 'chat':
-										#send empty chat
+									if self.afk_behavior == 'chat' or self.afk_behavior == 'spec':
+										#send empty msg in team chat
 										pkt = struct.pack('bbb', 17, local_player_id, 1) + ' '.encode('cp437')
 										event.peer.send(0, enet.Packet(pkt, enet.PACKET_FLAG_RELIABLE))
 									elif self.afk_behavior == 'input':	
