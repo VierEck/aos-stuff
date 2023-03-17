@@ -14,6 +14,7 @@ commands:
 	/play folder 00-00-00               -> plays demo before the specified time with most recent possible date in folder. 
 	/play folder                        -> plays most recent demo in folder
 	/play                               -> plays most recent demo
+	/find filename                      -> find demo with exact filename. 
 	/yes                                -> confirm /play command
 	/replay                             -> restart current demo. when at home replay last viewed demo
 	
@@ -52,8 +53,23 @@ test = False
 testfile = "test.demo" #rename a working demo to this
 
 
-def search_demo(cl, chat):
+def find_demo(cl, chat): #search based on exact filename
+	for folders in os.listdir(path):
+		if os.path.isdir(os.path.join(path, folders)) and folders != '__pycache__':
+			for demo in os.listdir(folders):
+				if demo == chat:
+					cl.demo = os.path.join(folders, demo)
+					cl.send_chat("found " + demo)
+					cl.send_chat("continue?")
+					return
+	cl.send_chat("no demo with the same filename found. aborting command")
+
+
+def search_demo(cl, chat): #search based on time
 	args = chat.split()
+	if args[0] == "__pycache__":
+		cl.send_chat("thats not allowed :)")
+		return
 	if len(args) == 3:
 		folder = os.path.join(path, args[0])
 		date_time = args[1] + "-" + args[2]
@@ -73,11 +89,14 @@ def search_demo(cl, chat):
 		import pathlib
 		demos = []
 		for folders in os.listdir(path):
-			if os.path.isdir(os.path.join(path, folders)):
+			if os.path.isdir(os.path.join(path, folders)) and folders != '__pycache__':
 				for demo in os.listdir(folders):
 					demos.append(folders + "/" + demo)
 	else:
 		demos = os.listdir(folder)
+	if len(demos) < 1:
+		cl.send_chat("Currently no demos stored. aborting command")
+		return
 	demos.append(date_time)
 	demos.sort()
 	i = demos.index(date_time)
@@ -123,6 +142,8 @@ def handle_command(cl, chat):
 		else:
 			cl.send_chat("no demo selected")
 		return
+	if chat[:4] == "find":
+		find_demo(cl, chat[5:])
 	if chat[:4] == "play":
 		search_demo(cl, chat[5:])
 		return
