@@ -3,7 +3,7 @@ feetbuild
 
 needs utils.py by sByte. 
 
-/fb
+/feetb
 
 build a block inside ur legs. 
 combine this with fly.py by jipok to build blocks in the air. 
