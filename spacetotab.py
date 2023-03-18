@@ -9,7 +9,7 @@ parser.add_argument('file', default='spacetotab.py', help="File to read from")
 parser.add_argument('spaces', default=4, type=int, help="how many spaces to turn into a tab")
 args = parser.parse_args()
 
-is_file = os.path.dirname(__file__) + args.file
+is_file = os.path.dirname(__file__) + "/" + args.file
 if not os.path.exists(is_file):
 	print("no file by that name found in current directory. typo?")
 	sys.exit()
