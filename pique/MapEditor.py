@@ -1,4 +1,5 @@
 '''
+latest version: https://github.com/VierEck/aos-scripts/blob/main/pique/MapEditor.py
 LICENSE: GPL-3.0
 author: VierEck.
 
@@ -11,18 +12,16 @@ this causes desync with normal clients making them incompatible.
 incompatible clients are automatically kicked.
 
 this script is to be put as 1st in the script priority.
-better yet dont include other scripts unrelated to the MapEditor 
-to ensure everything working as supposed to. 
 
 todo:
-	fix ball and cylinder volume tool
 	send "full" map data
 		fix dirt block colors
+		fix map desync
 	setmapobject tool
+	mapeditor commands
 '''
 
 
-from enum import IntEnum, auto
 from piqueserver.config import config
 from pyspades.bytes import ByteReader as reader, ByteWriter as writer
 from pyspades.packet import register_packet, register_packet_handler
@@ -33,7 +32,6 @@ from pyspades.constants import *
 from pyspades.common import Vertex3, get_color
 from pyspades import world
 from piqueserver.commands import command
-from twisted.logger import Logger as log
 from twisted.internet import reactor
 from pyspades.player import check_nan
 
@@ -46,24 +44,11 @@ def max_vol(self, val):
 	self.protocol.max_build_volume = int(val)
 
 
-class volume_type(IntEnum):
-	BlockSingle = 0
-	BlockLine = auto()
-	Box = auto()
-	Ball = auto()
-	Cylinder_x = auto()
-	Cylinder_y = auto()
-	Cylinder_z = auto()
-	VOLUMETYPEMAX = auto()
+BlockSingle, BlockLine, Box, Ball, Cylinder_x, Cylinder_y, Cylinder_z, VOLUMETYPEMAX = range(8)
+Destroy, Build, Paint, TextureBuild, TexturePaint, TOOLTYPEMAX = range(6)
+DestroySpawn, SpawnTeam1, SpawnTeam2 = 3, 4, 5
 
-class tool_type(IntEnum):
-	Destroy	= 0
-	Build = auto()
-	Paint = auto()
-	TextureBuild = auto() #not supported
-	TexturePaint = auto() #not supported
-	Move = auto()
-	TOOLTYPEMAX = auto()
+BUILDER_POSITION_RATE = 0.2
 
 
 def create_block(self, x, y, z, color):
@@ -72,27 +57,29 @@ def create_block(self, x, y, z, color):
 	if map.is_valid_position(x, y, z):
 		map.set_point(x, y, z, color)
 
-def edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2, x3 = None, y3 = None, z3 = None):
+def edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2, texture = None):
 	map = self.protocol.map
-	if tool == tool_type.Move:
-		if (x3 == None or y3 == None or z3 == None):
+	if tool == TextureBuild or tool == TexturePaint:
+		if texture is None:
 			return False
-		x3 = x3 - x1
-		y3 = y3 - y1
-		z3 = z3 - z1
 	
-	if (x1 == x2 and y1 == y2 and z1 == z2) or volume == volume_type.BlockSingle:
-		if tool == tool_type.Destroy:
+	if (x1 == x2 and y1 == y2 and z1 == z2) or volume == BlockSingle:
+		if tool == Destroy:
 			map.remove_point(x1, y1, z1)
-		elif tool == tool_type.Build:
+		elif tool == Build:
 			create_block(self, x1, y1, z1, self.color)
-		elif tool == tool_type.Paint:
+		elif tool == Paint:
 			if map.get_solid(x1, y1, z1):
-				create_block(self, x1, y1, z1)
-		elif tool == tool_type.Move and allow:
-			color = map.get_color(x, y, z)
-			create_block(self, x + x3, y + y3, z + z3, color)
-			map.remove_point(x, y, z)
+				create_block(self, x1, y1, z1, self.color)
+		elif tool == TextureBuild:
+			if texture[0] == 1:
+				color = texture[1], texture[2], texture[3]
+				create_block(self, x1, y1, z1, color)
+		elif tool == TexturePaint:
+			if texture[0] == 1:
+				if map.get_solid(x1, y1, z1):
+					color = texture[1], texture[2], texture[3]
+					create_block(self, x1, y1, z1, color)
 		return True
 	
 	x, y = cx, cy = x1, y1
@@ -110,18 +97,18 @@ def edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2, x3 = None, y3 = None
 		check_y *= -1
 	if diff_z < 0:
 		zi = -1
-		check_y *= -1
+		check_z *= -1
 	
 	mx = my = mz = 0
-	if volume > volume_type.Box:
+	if volume > Box:
 		if (check_x < 3 and check_y < 3) or (check_y < 3 and check_z < 3) or (check_z < 3 and check_x < 3):
-			volume = volume_type.Box
+			volume = Box
 		elif check_x < 3:
-			volume = volume_type.Cylinder_x
+			volume = Cylinder_x
 		elif check_y < 3:
-			volume = volume_type.Cylinder_y
+			volume = Cylinder_y
 		elif check_z < 3:
-			volume = volume_type.Cylinder_z
+			volume = Cylinder_z
 		
 		diff_x *= 0.5
 		diff_y *= 0.5
@@ -131,32 +118,47 @@ def edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2, x3 = None, y3 = None
 		diff_y **= 2
 		diff_z **= 2
 	
+	it_texture = 0
 	while True:
 		allow = True
-		if volume == volume_type.Ball:
+		if volume == Ball:
 			if (((x - mx)**2 / diff_x) + ((y - my)**2 / diff_y) + ((z - mz)**2 / diff_z)) > 1.1:
 				allow = False
-		elif volume == volume_type.Cylinder_x:
+		elif volume == Cylinder_x:
 			if (((y - my)**2 / diff_y) + ((z - mz)**2 / diff_z)) > 1.1:
 				allow = False
-		elif volume == volume_type.Cylinder_y:
+		elif volume == Cylinder_y:
 			if (((x - mx)**2 / diff_x) + ((z - mz)**2 / diff_z)) > 1.1:
 				allow = False
-		elif volume == volume_type.Cylinder_z:
+		elif volume == Cylinder_z:
 			if (((x - mx)**2 / diff_x) + ((y - my)**2 / diff_y)) > 1.1:
 				allow = False
 		
-		if tool == tool_type.Destroy and allow:
+		if tool == Destroy and allow:
 			map.remove_point(x, y, z)
-		elif tool == tool_type.Build and allow:
+		elif tool == Build and allow:
 			create_block(self, x, y, z, self.color)
-		elif tool == tool_type.Paint and allow:
+		elif tool == Paint and allow:
 			if map.get_solid(x, y, z):
 				create_block(self, x, y, z, self.color)
-		elif tool == tool_type.Move and allow:
-			color = map.get_color(x, y, z)
-			create_block(self, x + x3, y + y3, z + z3, color)
-			map.remove_point(x, y, z)
+		elif tool == TextureBuild:
+			if map.is_valid_position(x, y, z):
+				if texture[it_texture] == 1:
+					if allow:
+						color = texture[it_texture + 1], texture[it_texture + 2], texture[it_texture + 3]
+						create_block(self, x, y, z, color)
+					it_texture += 4
+				else:
+					it_texture += 1
+		elif tool == TexturePaint and allow:
+			if map.is_valid_position(x, y, z):
+				if texture[it_texture] == 1:
+					if allow and map.get_solid(x, y, z):
+						color = texture[it_texture + 1], texture[it_texture + 2], texture[it_texture + 3]
+						create_block(self, x, y, z, color)
+					it_texture += 4
+				else:
+					it_texture += 1
 			
 		if x == x2 and y == y2 and z == z2:
 			break
@@ -201,10 +203,22 @@ class BlockVolume(Loader):
 		self.x2 = reader.readShort(True, False)
 		self.y2 = reader.readShort(True, False)
 		self.z2 = reader.readShort(True, False)
-		if self.tool == tool_type.Move:
-			self.x3 = reader.readShort(True, False)
-			self.y3 = reader.readShort(True, False)
-			self.z3 = reader.readShort(True, False)
+		if self.tool == TextureBuild or self.tool == TexturePaint:
+			diff_x, diff_y, diff_z = self.x2 - self.x1, self.y2 - self.y1, self.z2 - self.z1
+			if diff_x < 0:
+				diff_x *= -1
+			if diff_y < 0:
+				diff_x *= -1
+			if diff_z < 0:
+				diff_z *= -1
+			cells = (diff_x + 1) * (diff_y + 1) * (diff_z + 1)
+			self.texture = []
+			for c in range(cells):
+				colored = reader.readByte(True)
+				self.texture.append(colored)
+				if colored == 1:
+					for i in range(3):
+						self.texture.append(reader.readByte(True))
 
 	def write(self, writer):
 		writer.writeByte(self.id, True)
@@ -217,12 +231,12 @@ class BlockVolume(Loader):
 		writer.writeShort(self.x2, True, False)
 		writer.writeShort(self.y2, True, False)
 		writer.writeShort(self.z2, True, False)
-		if self.tool == tool_type.Move:
-			writer.writeShort(self.x3, True, False)
-			writer.writeShort(self.y3, True, False)
-			writer.writeShort(self.z3, True, False)
+		if self.tool == TextureBuild or self.tool == TexturePaint:
+			for col in self.texture:
+				writer.writeByte(col, True)
 
 register_packet(BlockVolume)
+
 
 @register_packet_handler(BlockVolume)
 def on_BlockVolume(self, contained: BlockVolume) -> None:
@@ -230,13 +244,11 @@ def on_BlockVolume(self, contained: BlockVolume) -> None:
 	map = self.protocol.map
 	
 	player_id = contained.player_id
-	if player_id != self.player_id:
-		log.info("unusual behaviour: %s sent BlockVolume packet containing wrong player_id" % self.name)
 	volume = contained.volume
-	if volume >= volume_type.VOLUMETYPEMAX:
+	if volume >= VOLUMETYPEMAX:
 		return
 	tool = contained.tool
-	if tool >= tool_type.TOOLTYPEMAX:
+	if tool >= TOOLTYPEMAX:
 		return
 	x1 = contained.x1
 	y1 = contained.y1
@@ -267,12 +279,10 @@ def on_BlockVolume(self, contained: BlockVolume) -> None:
 		return
 	
 	edit = False
-	if tool == tool_type.Move:
-		x3 = contained.x3
-		y3 = contained.y3
-		z3 = contained.z3
-		if map.is_valid_position(x3, y3, z3):
-			edit = edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2, x3, y3, z3)
+	if tool == TextureBuild or tool == TexturePaint:
+		texture = contained.texture
+		if len(texture) >= check_volume:
+			edit = edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2, texture)
 	else:
 		edit = edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2)
 	
@@ -289,10 +299,8 @@ def on_BlockVolume(self, contained: BlockVolume) -> None:
 	block_volume.x2 = x2
 	block_volume.y2 = y2
 	block_volume.z2 = z2
-	if block_volume.tool == tool_type.Move:
-		block_volume.x3 = contained.x3
-		block_volume.y3 = contained.y3
-		block_volume.z3 = contained.z3
+	if block_volume.tool == TextureBuild or block_volume.tool == TexturePaint:
+		block_volume.texture = contained.texture
 	self.protocol.broadcast_contained(block_volume, save=True)
 
 
@@ -364,6 +372,14 @@ def apply_script(protocol, connection, config):
 		
 		@register_packet_handler(loaders.PositionData)
 		def on_position_update_recieved(self, contained: loaders.PositionData) -> None:
+			current_time = reactor.seconds()
+			last_update = self.last_position_update
+			self.last_position_update = current_time
+			if last_update is not None:
+				dt = current_time - last_update
+				if not self.team.spectator and dt < MAX_POSITION_RATE:
+					self.set_location()
+					return
 			x, y, z = contained.x, contained.y, contained.z
 			if check_nan(x, y, z):
 				self.on_hack_attempt('Invalid position data received')
