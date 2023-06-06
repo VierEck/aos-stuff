@@ -642,5 +642,9 @@ def apply_script(protocol, connection, config):
 			self.territories = []
 			tc_data.set_entities([])
 			return protocol.on_map_change(self, map_)
+		
+		
+		def get_mode_name(self) -> str:
+			return "MapEditor"
 	
 	return mapeditor_p, mapeditor_c
