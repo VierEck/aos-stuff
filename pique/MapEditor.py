@@ -12,13 +12,14 @@ this causes desync with normal clients making them incompatible.
 incompatible clients are automatically kicked.
 
 this script is to be put as 1st in the script priority.
+set spawn time to 0 in configs. 
 
 todo:
 	send "full" map data
 		fix dirt block colors
 		fix map desync
 	setmapobject tool
-	mapeditor commands
+	send tc and ctf state data
 '''
 
 
@@ -38,11 +39,47 @@ from pyspades.player import check_nan
 
 mapeditor_config = config.section('MapEditor')
 
+
 @command('max_volume', 'max_vol', admin_only=True)
 def max_vol(self, val):
 	#adjust max build volume ingame. 
 	self.protocol.max_build_volume = int(val)
 
+@command('r')
+def set_respawn(self, x = None, y = None, z = None):
+	if x != None and y != None and z != None:
+		x, y, z = float(x), float(y), float(z)
+		if self.protocol.map.is_valid_position(x, y, z):
+			self.builder_respawn = Vertex3(x, y, z)
+		return
+	if x == None and y == None and z == None:
+		if self.team.spectator:
+			self.builder_respawn = self.builder_position
+		else:
+			self.builder_respawn = self.world_object.position
+
+@command('k')
+def do_respawn(self):
+	if self.builder_respawn is not None:
+		self.builder_position = self.world_object.position = self.builder_respawn
+		self.set_location()
+
+@command('s')
+def switch_quick(self, team = None):
+	if team == None and self.quick_switch != None:
+		if self.team.spectator:
+			self.team = self.protocol.teams[self.quick_switch - 1]
+		else:
+			self.team = self.protocol.teams[-1]
+		self.spawn()
+		return
+	if team != None and (team == 1 or team == 2):
+		self.quick_switch = int(team) - 1
+
+@command('g', admin_only=True)
+def switch_gamemode(self):
+	self.protocol.broadcast_chat("/g switching gamemode")
+	return
 
 BlockSingle, BlockLine, Box, Ball, Cylinder_x, Cylinder_y, Cylinder_z, VOLUMETYPEMAX = range(8)
 Destroy, Build, Paint, TextureBuild, TexturePaint, TOOLTYPEMAX = range(6)
@@ -197,12 +234,12 @@ class BlockVolume(Loader):
 		self.player_id = reader.readByte(True)
 		self.volume = reader.readByte(True)
 		self.tool = reader.readByte(True)
-		self.x1 = reader.readShort(True, False)
-		self.y1 = reader.readShort(True, False)
-		self.z1 = reader.readShort(True, False)
-		self.x2 = reader.readShort(True, False)
-		self.y2 = reader.readShort(True, False)
-		self.z2 = reader.readShort(True, False)
+		self.x1 = reader.readShort(False, False)
+		self.y1 = reader.readShort(False, False)
+		self.z1 = reader.readShort(False, False)
+		self.x2 = reader.readShort(False, False)
+		self.y2 = reader.readShort(False, False)
+		self.z2 = reader.readShort(False, False)
 		if self.tool == TextureBuild or self.tool == TexturePaint:
 			diff_x, diff_y, diff_z = self.x2 - self.x1, self.y2 - self.y1, self.z2 - self.z1
 			if diff_x < 0:
@@ -225,12 +262,12 @@ class BlockVolume(Loader):
 		writer.writeByte(self.player_id, True)
 		writer.writeByte(self.volume, True)
 		writer.writeByte(self.tool, True)
-		writer.writeShort(self.x1, True, False)
-		writer.writeShort(self.y1, True, False)
-		writer.writeShort(self.z1, True, False)
-		writer.writeShort(self.x2, True, False)
-		writer.writeShort(self.y2, True, False)
-		writer.writeShort(self.z2, True, False)
+		writer.writeShort(self.x1, False, False)
+		writer.writeShort(self.y1, False, False)
+		writer.writeShort(self.z1, False, False)
+		writer.writeShort(self.x2, False, False)
+		writer.writeShort(self.y2, False, False)
+		writer.writeShort(self.z2, False, False)
 		if self.tool == TextureBuild or self.tool == TexturePaint:
 			for col in self.texture:
 				writer.writeByte(col, True)
@@ -310,6 +347,8 @@ def apply_script(protocol, connection, config):
 	class mapeditor_c(connection):
 		bmode = False
 		builder_position = None
+		builder_respawn = None
+		quick_switch = 1
 	
 		def check_bmode(self):
 			if not self.bmode:
@@ -338,7 +377,7 @@ def apply_script(protocol, connection, config):
 			else:
 				x, y, z = pos
 			if self.builder_position is not None:
-				x, y, z = self.builder_position
+				x, y, z = self.builder_position.x, self.builder_position.y, self.builder_position.z
 			returned = self.on_spawn_location((x, y, z))
 			if returned is not None:
 				x, y, z = returned
