@@ -14,15 +14,31 @@ incompatible clients are automatically kicked.
 this script is to be put as 1st in the script priority.
 set spawn time to 0 in configs. 
 
+/max_vol <value>
+	set maximum blockvolume dimensions. admin only
+/r <x y z> 
+	set respawn (more like instant reposition)
+/r 
+	set respawn at ur current location
+/k
+	respawn
+/s <team>
+	set team instant switch
+/s
+	instant team switch
+/g
+	switch gamemode (ctf <-> tc). admin only
+
 todo:
 	send "full" map data
 		fix dirt block colors
 		fix map desync
+		con: longer map transfer. bad?
 	setmapobject tool
-	send tc and ctf state data
 '''
 
 
+import enet
 from piqueserver.config import config
 from pyspades.bytes import ByteReader as reader, ByteWriter as writer
 from pyspades.packet import register_packet, register_packet_handler
@@ -34,7 +50,7 @@ from pyspades.common import Vertex3, get_color
 from pyspades import world
 from piqueserver.commands import command
 from twisted.internet import reactor
-from pyspades.player import check_nan
+from pyspades.player import check_nan, tc_data
 
 
 mapeditor_config = config.section('MapEditor')
@@ -68,7 +84,7 @@ def do_respawn(self):
 def switch_quick(self, team = None):
 	if team == None and self.quick_switch != None:
 		if self.team.spectator:
-			self.team = self.protocol.teams[self.quick_switch - 1]
+			self.team = self.protocol.teams[self.quick_switch]
 		else:
 			self.team = self.protocol.teams[-1]
 		self.spawn()
@@ -79,7 +95,11 @@ def switch_quick(self, team = None):
 @command('g', admin_only=True)
 def switch_gamemode(self):
 	self.protocol.broadcast_chat("/g switching gamemode")
-	return
+	if self.protocol.game_mode == CTF_MODE:
+		self.protocol.game_mode = TC_MODE
+	elif self.protocol.game_mode == TC_MODE:
+		self.protocol.game_mode = CTF_MODE
+
 
 BlockSingle, BlockLine, Box, Ball, Cylinder_x, Cylinder_y, Cylinder_z, VOLUMETYPEMAX = range(8)
 Destroy, Build, Paint, TextureBuild, TexturePaint, TOOLTYPEMAX = range(6)
@@ -225,6 +245,23 @@ register_packet(BuildMode)
 @register_packet_handler(BuildMode)
 def on_BuildMode(self, contained) -> None:
 	self.bmode = True
+	current_mode = self.protocol.game_mode
+		
+	if self.protocol.game_mode == CTF_MODE:
+		self.protocol.game_mode = TC_MODE
+	elif self.protocol.game_mode == TC_MODE:
+		self.protocol.game_mode = CTF_MODE
+	self._send_connection_data()
+	for data in self.saved_loaders:
+		packet = enet.Packet(bytes(data), enet.PACKET_FLAG_RELIABLE)
+		self.peer.send(0, packet)
+	
+	self.protocol.game_mode = current_mode
+	self._send_connection_data()
+	for data in self.saved_loaders:
+		packet = enet.Packet(bytes(data), enet.PACKET_FLAG_RELIABLE)
+		self.peer.send(0, packet)
+	self.saved_loaders = None
 	
 
 class BlockVolume(Loader):
@@ -429,9 +466,14 @@ def apply_script(protocol, connection, config):
 				self.world_object.set_position(x, y, z)
 			self.on_position_update()
 			return
+		
+		
+		def on_block_destroy(self, x, y, z, val):
+			return False # disable normal destruction. (causes block fall and map desync otherwise)
 	
 	
 	class mapeditor_p(protocol):
+		current_gamemode = None
 		
 		max_build_volume = mapeditor_config.option('max_build_volume', 100000).get()
 		
@@ -459,9 +501,13 @@ def apply_script(protocol, connection, config):
 					orientation = (0.0, 0.0, 0.0)
 				items.append((position, orientation))
 			world_update = loaders.WorldUpdate()
-			# we only want to send as many items of the player list as needed, so
-			# we slice it off at the highest player id
 			world_update.items = items[:highest_player_id+1]
 			self.broadcast_contained(world_update, unsequenced=True)
+		
+		
+		def on_map_change(self, map_):
+			self.current_gamemode = self.game_mode
+			tc_data.set_entities([])
+			return protocol.on_map_change(self, map_)
 	
 	return mapeditor_p, mapeditor_c
