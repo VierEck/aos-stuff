@@ -29,19 +29,19 @@ set spawn time to 0 in configs.
 /g
 	switch gamemode (ctf <-> tc). admin only
 
+
 todo:
 	send "full" map data
-		fix dirt block colors
-		fix map desync
+		-> fix dirt block colors
+		-> fix map desync
 		con: longer map transfer. bad?
-	setmapobject tool
 '''
 
 
 import enet
 from piqueserver.config import config
 from pyspades.bytes import ByteReader as reader, ByteWriter as writer
-from pyspades.packet import register_packet, register_packet_handler
+from pyspades.packet import register_packet, register_packet_handler, _client_loaders, _server_loaders
 from pyspades.loaders import Loader
 from pyspades import contained as loaders
 from piqueserver.scheduler import Scheduler
@@ -59,7 +59,25 @@ mapeditor_config = config.section('MapEditor')
 @command('max_volume', 'max_vol', admin_only=True)
 def max_vol(self, val):
 	#adjust max build volume ingame. 
+	if int(val) <= 0:
+		self.send_chat("invalid value")
+		return
 	self.protocol.max_build_volume = int(val)
+
+@command('max_territories', 'max_ter', admin_only=True)
+def max_ter(self, val):
+	#adjust max territories ingame. 
+	if int(val) > 256:
+		self.send_chat("invalid value. maximum: 256")
+		return
+	self.protocol.max_territories = int(val)
+
+@command('max_spawns', admin_only=True)
+def max_spawns(self, val):
+	#adjust max spawns ingame. 
+	if int(val) > 256:
+		self.send_chat("invalid value. maximum: 256")
+	self.protocol.max_spawns = int(val)
 
 @command('r')
 def set_respawn(self, x = None, y = None, z = None):
@@ -231,6 +249,104 @@ def edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2, texture = None):
 			z += zi
 	return True
 	
+
+class Map_Object():
+	def __init__(self, type, state, team, x, y, z, x2, y2, z2):
+		self.type = type
+		self.state = state
+		self.team = team
+		self.x, self.y, self.z = x, y, z
+		self.x2, self.y2, self.z2 = x2, y2, z2
+		
+
+class MoveObject(Loader):
+	id = 11
+
+	def read(self, reader):
+		self.type = reader.readByte(True)
+		self.state = reader.readByte(True)
+		self.x = reader.readFloat(False)
+		self.y = reader.readFloat(False)
+		self.z = reader.readFloat(False)
+		self.x2 = reader.readFloat(False)
+		self.y2 = reader.readFloat(False)
+		self.z2 = reader.readFloat(False)
+
+	def write(self, writer):
+		writer.writeByte(self.id, True)
+		writer.writeByte(self.type, True)
+		writer.writeByte(self.state, True)
+		writer.writeFloat(self.x, False)
+		writer.writeFloat(self.y, False)
+		writer.writeFloat(self.z, False)
+		writer.writeFloat(self.x2, False)
+		writer.writeFloat(self.y2, False)
+		writer.writeFloat(self.z2, False)
+
+del _client_loaders[11] #remove the original packet
+del _server_loaders[11]
+
+register_packet(MoveObject)
+
+@register_packet_handler(MoveObject)
+def on_MoveObject(self, contained: MoveObject) -> None:
+	type = contained.type
+	state = contained.state
+	x, y, z = contained.x, contained.y, contained.z
+	map = self.protocol.map
+	if not map.is_valid_position(x, y, z):
+		return
+	x2, y2, z2 = contained.x2, contained.y2, contained.z2
+	if not map.is_valid_position(x2, y2, z2):
+		return
+		
+	blue = self.protocol.blue_team
+	green = self.protocol.green_team
+	
+	if state == DestroySpawn:
+		for spawn in self.protocol.spawns:
+			if spawn.type == type:
+				self.protocol.spawns.remove(spawn)
+				self.protocol.broadcast_contained(contained, save=True)
+				return
+		return
+	if state == SpawnTeam1 or state == SpawnTeam2:
+		if len(self.protocol.spawns) >= self.protocol.max_spawns:
+			return
+		team = blue
+		if state == SpawnTeam2:
+			team = green
+		self.protocol.spawns.append(Map_Object(type, state, team, x, y, z, x2, y2, z2))
+		self.protocol.broadcast_contained(contained, save=True)
+		return
+
+	if self.protocol.game_mode == CTF_MODE:
+		if type == BLUE_BASE:
+			blue.base.x, blue.base.y, blue.base.z = x, y, z
+		elif type == GREEN_BASE:
+			green.base.x, green.base.y, green.base.z = x, y, z
+		elif type == BLUE_FLAG:
+			blue.flag.x, blue.flag.y, blue.flag.z = x, y, z
+		elif type == GREEN_FLAG:
+			green.flag.x, green.flag.y, green.flag.z = x, y, z
+		else:
+			return
+	elif self.protocol.game_mode == TC_MODE:
+		if type >= len(self.protocol.territories):
+			team = blue
+			if state == 1:
+				team = green
+			self.protocol.territories.append(Map_Object(type, state, team, x, y, z, x2, y2, z2))
+		elif state > 2:
+			if len(self.protocol.territories) >= self.protocol.max_territories:
+				return
+			self.protocol.territories.pop(type)
+		else:
+			return
+		tc_data.set_entities(self.protocol.territories)
+	self.protocol.broadcast_contained(contained, save=True)
+		
+
 class BuildMode(Loader):
 	id = 100
 
@@ -262,6 +378,14 @@ def on_BuildMode(self, contained) -> None:
 		packet = enet.Packet(bytes(data), enet.PACKET_FLAG_RELIABLE)
 		self.peer.send(0, packet)
 	self.saved_loaders = None
+	
+	for spawn in self.protocol.spawns:
+		map_object = MoveObject()
+		map_object.type = spawn.type
+		map_object.state = spawn.state
+		map_object.x, map_object.y, map_object.z = spawn.x, spawn.y, spawn.z
+		map_object.x2, map_object.y2, map_object.z2 = spawn.x2, spawn.y2, spawn.z2
+		self.send_contained(map_object)
 	
 
 class BlockVolume(Loader):
@@ -310,7 +434,6 @@ class BlockVolume(Loader):
 				writer.writeByte(col, True)
 
 register_packet(BlockVolume)
-
 
 @register_packet_handler(BlockVolume)
 def on_BlockVolume(self, contained: BlockVolume) -> None:
@@ -376,8 +499,8 @@ def on_BlockVolume(self, contained: BlockVolume) -> None:
 	if block_volume.tool == TextureBuild or block_volume.tool == TexturePaint:
 		block_volume.texture = contained.texture
 	self.protocol.broadcast_contained(block_volume, save=True)
-
-
+	
+		
 
 def apply_script(protocol, connection, config):
 
@@ -388,6 +511,8 @@ def apply_script(protocol, connection, config):
 		quick_switch = 1
 	
 		def check_bmode(self):
+			if self is None:
+				return
 			if not self.bmode:
 				self.disconnect(ERROR_WRONG_VERSION)
 				print("kicked %s. Client failed to send back BuildMode confirmation packet in time" % self.name)
@@ -470,13 +595,20 @@ def apply_script(protocol, connection, config):
 		
 		def on_block_destroy(self, x, y, z, val):
 			return False # disable normal destruction. (causes block fall and map desync otherwise)
+			
+		
+		def drop_flag(self):
+			return #disable dropping flag. players cant pick up flags either to begin with
 	
 	
 	class mapeditor_p(protocol):
 		current_gamemode = None
+		spawns = []
+		territories = []
 		
 		max_build_volume = mapeditor_config.option('max_build_volume', 100000).get()
-		
+		max_territories = mapeditor_config.option('max_territories', 128).get()
+		max_spawns = mapeditor_config.option('max_spawns', 128).get()
 		
 		def update_network(self):
 			if not len(self.players):
@@ -507,6 +639,7 @@ def apply_script(protocol, connection, config):
 		
 		def on_map_change(self, map_):
 			self.current_gamemode = self.game_mode
+			self.territories = []
 			tc_data.set_entities([])
 			return protocol.on_map_change(self, map_)
 	
