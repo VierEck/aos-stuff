@@ -14,7 +14,10 @@ from pyspades.packet import register_packet_handler
 from time import time
 import asyncio
 from random import randrange
+import enet
 
+
+spawn_distance = 64
 
 
 def send_notice_msg(c):
@@ -53,6 +56,27 @@ def limbo_orientation(c, entity):
 	ori_pkt = loaders.OrientationData()
 	ori_pkt.x, ori_pkt.y, ori_pkt.z = ori.x, ori.y, ori.z
 	c.send_contained(ori_pkt)
+
+
+def fake_world_update(c):
+	p = c.protocol
+	if not len(p.players):
+		return
+	items = []
+	highest_player_id = max(p.players)
+	for i in range(highest_player_id + 1):
+		position = orientation = (1.0, 1.0, 1.0)
+		items.append((position, orientation))
+	world_update = loaders.WorldUpdate()
+	world_update.items = items[:highest_player_id+1]
+	c.send_contained(world_update)
+
+
+def send_saved_packets(c):
+	for data in c.saved_loaders:
+		packet = enet.Packet(bytes(data), enet.PACKET_FLAG_RELIABLE)
+		c.peer.send(0, packet)
+	c.saved_loaders = None
 
 
 def rotate_dead_pos(c, dir):
@@ -102,7 +126,6 @@ async def spawn_limbo(c):
 	while p.map.get_solid(x, y, z):
 		z -= 1
 	c.dead_pos = x, y, z
-		
 	
 	spawn_pkt = loaders.CreatePlayer()
 	spawn_pkt.player_id = c.player_id
@@ -115,6 +138,7 @@ async def spawn_limbo(c):
 	limbo_plattform(c, 1)
 	limbo_orientation(c, first_entity)
 	
+	c.saved_loaders = []
 	while True:
 		if c.hp:
 			break
@@ -129,8 +153,12 @@ async def spawn_limbo(c):
 		if time() > c.dead_time + 5:
 			rotate_dead_pos(c, 1)
 			
+		fake_world_update(c)
+		
 		await asyncio.sleep(1/10)
 	c.spawn_limbo_loop.cancel()
+	
+	send_saved_packets(c)
 	
 	limbo_plattform(c)
 	
@@ -245,7 +273,7 @@ def apply_script(protocol, connection, config):
 							dir.x = randrange(-100, 100)
 							dir.y = randrange(-100, 100)
 							dir /= dir.length()
-							dir *= 64
+							dir *= spawn_distance
 							x += dir.x
 							y += dir.y
 							z = 60
@@ -260,7 +288,6 @@ def apply_script(protocol, connection, config):
 				return connection.spawn(c, pos)
 			else:
 				c.allowed_to_spawn = True
-			
 	
 	
 	return protocol, spawn_limbo_c
