@@ -254,8 +254,8 @@ def apply_script(protocol, connection, config):
 						if contained.jump or contained.up or contained.down:
 							x, y, z = c.dead_pos
 							dir = Vertex3(0, 0, 0)
-							dir.x = random.randrange(0, 100)
-							dir.y = random.randrange(0, 100)
+							dir.x = random.randrange(-100, 100)
+							dir.y = random.randrange(-100, 100)
 							dir /= dir.length()
 							dir *= 64
 							x += dir.x
