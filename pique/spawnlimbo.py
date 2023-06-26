@@ -2,6 +2,8 @@
 author: VierEck.
 
 SpawnLimbo.
+
+limbo state for TC gamemode. players can choose a tent to spawn into.
 '''
 
 from pyspades.constants import BUILD_BLOCK, DESTROY_BLOCK
