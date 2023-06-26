@@ -13,7 +13,7 @@ from pyspades import world
 from pyspades.packet import register_packet_handler
 from time import time
 import asyncio
-import random
+from random import randrange
 
 
 
@@ -25,10 +25,8 @@ def send_notice_msg(c):
 	c.send_chat_notice(notice_msg)
 
 
-def rotate_dead_pos(c, dir):
-	if c.current_entity_id is not None:
-		c.dead_time = time()
-		
+def limbo_plattform(c, action = 0):
+	if action == 0:
 		block_pkt = loaders.BlockAction()
 		block_pkt.player_id = c.player_id
 		block_pkt.value = DESTROY_BLOCK
@@ -37,6 +35,31 @@ def rotate_dead_pos(c, dir):
 		c.send_contained(block_pkt)
 		block_pkt.y -= 1
 		c.send_contained(block_pkt)
+	if action == 1:
+		block_pkt = loaders.BlockAction()
+		block_pkt.player_id = c.player_id
+		block_pkt.value = BUILD_BLOCK
+		block_pkt.x, block_pkt.y, block_pkt.z = c.dead_pos
+		block_pkt.z += 3
+		c.send_contained(block_pkt)
+		block_pkt.y -= 1
+		c.send_contained(block_pkt)
+
+def limbo_orientation(c, entity):
+	x, y, z = c.dead_pos
+	ori = Vertex3(entity.x - x, entity.y - y, entity.z - z)
+	ori /= ori.length()
+	ori *= 1.5 #zoom effect
+	ori_pkt = loaders.OrientationData()
+	ori_pkt.x, ori_pkt.y, ori_pkt.z = ori.x, ori.y, ori.z
+	c.send_contained(ori_pkt)
+
+
+def rotate_dead_pos(c, dir):
+	if c.current_entity_id is not None:
+		c.dead_time = time()
+		
+		limbo_plattform(c)
 	
 		p = c.protocol
 		c.current_entity_id += dir
@@ -61,22 +84,8 @@ def rotate_dead_pos(c, dir):
 		pos_pkt.x, pos_pkt.y, pos_pkt.z = c.dead_pos
 		c.send_contained(pos_pkt)
 		
-		x, y, z = c.dead_pos
-		ori = Vertex3(current_entity.x - x, current_entity.y - y, current_entity.z - z)
-		ori /= ori.length()
-		ori *= 1.5 #zoom effect
-		ori_pkt = loaders.OrientationData()
-		ori_pkt.x, ori_pkt.y, ori_pkt.z = ori.x, ori.y, ori.z
-		c.send_contained(ori_pkt)
-		
-		block_pkt = loaders.BlockAction()
-		block_pkt.player_id = c.player_id
-		block_pkt.value = BUILD_BLOCK
-		block_pkt.x, block_pkt.y, block_pkt.z = c.dead_pos
-		block_pkt.z += 3
-		c.send_contained(block_pkt)
-		block_pkt.y -= 1
-		c.send_contained(block_pkt)
+		limbo_plattform(c, 1)
+		limbo_orientation(c, current_entity)
 
 
 async def spawn_limbo(c):
@@ -103,22 +112,8 @@ async def spawn_limbo(c):
 	spawn_pkt.name = c.name
 	c.send_contained(spawn_pkt)
 	
-	block_pkt = loaders.BlockAction()
-	block_pkt.player_id = c.player_id
-	block_pkt.value = BUILD_BLOCK
-	block_pkt.x, block_pkt.y, block_pkt.z = c.dead_pos
-	block_pkt.z += 3
-	c.send_contained(block_pkt)
-	block_pkt.y -= 1
-	c.send_contained(block_pkt)
-	
-	x, y, z = c.dead_pos
-	ori = Vertex3(first_entity.x - x, first_entity.y - y, first_entity.z - z)
-	ori /= ori.length()
-	ori *= 1.5 #zoom effect
-	ori_pkt = loaders.OrientationData()
-	ori_pkt.x, ori_pkt.y, ori_pkt.z = ori.x, ori.y, ori.z
-	c.send_contained(ori_pkt)
+	limbo_plattform(c, 1)
+	limbo_orientation(c, first_entity)
 	
 	while True:
 		if c.hp:
@@ -137,14 +132,7 @@ async def spawn_limbo(c):
 		await asyncio.sleep(1/10)
 	c.spawn_limbo_loop.cancel()
 	
-	block_pkt = loaders.BlockAction()
-	block_pkt.player_id = c.player_id
-	block_pkt.value = DESTROY_BLOCK
-	block_pkt.x, block_pkt.y, block_pkt.z = c.dead_pos
-	block_pkt.z += 3
-	c.send_contained(block_pkt)
-	block_pkt.y -= 1
-	c.send_contained(block_pkt)
+	limbo_plattform(c)
 	
 	c.spawn_limbo_loop = asyncio.ensure_future(live_fog_transition(c))
 	c.dead_pos = None
@@ -238,7 +226,7 @@ def apply_script(protocol, connection, config):
 		def on_team_join(c, team):
 			if c.world_object is not None:
 				if not c.hp and c.team.id < 2:
-					return False
+					return False #dont allow switching while in spawn limbo
 			return connection.on_team_join(c, team)
 		
 		@register_packet_handler(loaders.InputData)
@@ -254,8 +242,8 @@ def apply_script(protocol, connection, config):
 						if contained.jump or contained.up or contained.down:
 							x, y, z = c.dead_pos
 							dir = Vertex3(0, 0, 0)
-							dir.x = random.randrange(-100, 100)
-							dir.y = random.randrange(-100, 100)
+							dir.x = randrange(-100, 100)
+							dir.y = randrange(-100, 100)
 							dir /= dir.length()
 							dir *= 64
 							x += dir.x
