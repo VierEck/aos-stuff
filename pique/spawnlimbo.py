@@ -147,7 +147,7 @@ async def spawn_limbo(c):
 		
 		pos_pkt = loaders.PositionData()
 		pos_pkt.x, pos_pkt.y, pos_pkt.z = c.dead_pos
-		pos_pkt.z += 1
+		pos_pkt.z += 0.74
 		c.send_contained(pos_pkt)
 		
 		if time() > c.dead_time + 5:
