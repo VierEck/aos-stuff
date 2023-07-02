@@ -5,7 +5,7 @@ author: VierEck.
 
 
 complementory pique script for OpenSpades MapEditor. 
-	https://github.com/VierEck/openspades/tree/map
+	https://github.com/VierEck/openspades/tree/map2
 
 this script changes protocol and game physics. 
 this causes desync with normal clients making them incompatible. 
@@ -28,13 +28,16 @@ set spawn time to 0 in configs.
 	instant team switch
 /g
 	switch gamemode (ctf <-> tc). admin only
+/ud
+	undo last blockvolumepacket
+/rd
+	redo last undone blockvolumepacket
 
 
 todo:
 	send "full" map data
-		-> fix dirt block colors
-		-> fix map desync
-		con: longer map transfer. bad?
+		pro: fix dirt block color desync
+		con: longer map transfer. 
 '''
 
 
@@ -54,6 +57,17 @@ from pyspades.player import check_nan, tc_data
 
 
 mapeditor_config = config.section('MapEditor')
+
+MapEditorExtensionId = 101
+MapEditorExtensionversion = 1
+MapEditorExtension = MapEditorExtensionId, MapEditorExtensionversion
+
+
+BlockSingle, BlockLine, Box, Ball, Cylinder_x, Cylinder_y, Cylinder_z, VOLUMETYPEMAX = range(8)
+Destroy, Build, Paint, TextureBuild, TOOLTYPEMAX = range(5)
+DestroySpawn, SpawnTeam1, SpawnTeam2 = 3, 4, 5
+
+BUILDER_POSITION_RATE = 0.2
 
 
 @command('max_volume', 'max_vol', admin_only=True)
@@ -119,12 +133,15 @@ def switch_gamemode(self):
 		self.protocol.game_mode = CTF_MODE
 
 
-BlockSingle, BlockLine, Box, Ball, Cylinder_x, Cylinder_y, Cylinder_z, VOLUMETYPEMAX = range(8)
-Destroy, Build, Paint, TextureBuild, TexturePaint, TOOLTYPEMAX = range(6)
-DestroySpawn, SpawnTeam1, SpawnTeam2 = 3, 4, 5
-
-BUILDER_POSITION_RATE = 0.2
-
+BlockVolumeHistory = []
+BlockVolumeHistoryId = 0
+class BlockVolumeHistoryItem():
+	def __init__(self, x1, y1, z1, x2, y2, z2, volume, tool, old_colors, new_colors):
+		self.x1, self.y1, self.z1 = x1, y1, z1
+		self.x2, self.y2, self.z2 = x2, y2, z2
+		self.volume, self.tool = volume, tool
+		self.old_colors, self.new_colors = old_colors, new_colors
+		
 
 def create_block(self, x, y, z, color):
 	#build block without the need for neighbor blocks
@@ -132,29 +149,54 @@ def create_block(self, x, y, z, color):
 	if map.is_valid_position(x, y, z):
 		map.set_point(x, y, z, color)
 
-def edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2, texture = None):
+def edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2, texture = None, record_history = True):
 	map = self.protocol.map
-	if tool == TextureBuild or tool == TexturePaint:
+	if tool == TextureBuild:
 		if texture is None:
 			return False
 	
+	old_colors = new_colors = []
+	global BlockVolumeHistory
+	global BlockVolumeHistoryId
+	
+	color = self.color
+	if record_history:
+		new_colors = texture
+		if tool is not TextureBuild:
+			new_colors = color
+	else:
+		if tool is not TextureBuild:
+			color = texture
+	
 	if (x1 == x2 and y1 == y2 and z1 == z2) or volume == BlockSingle:
+		if record_history:
+			if not map.get_solid(x1, y1, z1):
+				old_colors.append(0)
+			else:
+				old_colors.append(1)
+				r, g, b = map.get_color(x1, y2, z2)
+				old_colors.append(r)
+				old_colors.append(g)
+				old_colors.append(b)
+		
 		if tool == Destroy:
 			map.remove_point(x1, y1, z1)
 		elif tool == Build:
-			create_block(self, x1, y1, z1, self.color)
+			create_block(self, x1, y1, z1, color)
 		elif tool == Paint:
 			if map.get_solid(x1, y1, z1):
-				create_block(self, x1, y1, z1, self.color)
+				create_block(self, x1, y1, z1, color)
 		elif tool == TextureBuild:
 			if texture[0] == 1:
 				color = texture[1], texture[2], texture[3]
 				create_block(self, x1, y1, z1, color)
-		elif tool == TexturePaint:
-			if texture[0] == 1:
-				if map.get_solid(x1, y1, z1):
-					color = texture[1], texture[2], texture[3]
-					create_block(self, x1, y1, z1, color)
+			elif not record_history:
+				map.remove_point(x1, y1, z1)
+		if record_history:
+			block_vol = BlockVolumeHistoryItem(x1, y1, z1, x2, y2, z2, volume, tool, old_colors, new_colors)
+			BlockVolumeHistory = BlockVolumeHistory[:BlockVolumeHistoryId]
+			BlockVolumeHistory.append(block_vol)
+			BlockVolumeHistoryId += 1
 		return True
 	
 	x, y = cx, cy = x1, y1
@@ -209,31 +251,35 @@ def edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2, texture = None):
 			if (((x - mx)**2 / diff_x) + ((y - my)**2 / diff_y)) > 1.1:
 				allow = False
 		
-		if tool == Destroy and allow:
-			map.remove_point(x, y, z)
-		elif tool == Build and allow:
-			create_block(self, x, y, z, self.color)
-		elif tool == Paint and allow:
-			if map.get_solid(x, y, z):
-				create_block(self, x, y, z, self.color)
-		elif tool == TextureBuild:
-			if map.is_valid_position(x, y, z):
-				if texture[it_texture] == 1:
-					if allow:
-						color = texture[it_texture + 1], texture[it_texture + 2], texture[it_texture + 3]
-						create_block(self, x, y, z, color)
-					it_texture += 4
+		if allow:
+			if record_history:
+				if not map.get_solid(x, y, z):
+					old_colors.append(0)
 				else:
-					it_texture += 1
-		elif tool == TexturePaint and allow:
-			if map.is_valid_position(x, y, z):
-				if texture[it_texture] == 1:
-					if allow and map.get_solid(x, y, z):
-						color = texture[it_texture + 1], texture[it_texture + 2], texture[it_texture + 3]
-						create_block(self, x, y, z, color)
-					it_texture += 4
-				else:
-					it_texture += 1
+					old_colors.append(1)
+					r, g, b = map.get_color(x, y, z)
+					old_colors.append(r)
+					old_colors.append(g)
+					old_colors.append(b)
+			
+			if tool == Destroy:
+				map.remove_point(x, y, z)
+			elif tool == Build:
+				create_block(self, x, y, z, color)
+			elif tool == Paint:
+				if map.get_solid(x, y, z):
+					create_block(self, x, y, z, color)
+			elif tool == TextureBuild:
+				if map.is_valid_position(x, y, z) and it_texture < len(texture):
+					if texture[it_texture] == 1:
+						if it_texture < len(texture) + 3:
+							color = texture[it_texture + 1], texture[it_texture + 2], texture[it_texture + 3]
+							create_block(self, x, y, z, color)
+						it_texture += 4
+					else:
+						it_texture += 1
+						if not record_history:
+							map.remove_point(x, y, z)
 			
 		if x == x2 and y == y2 and z == z2:
 			break
@@ -247,57 +293,31 @@ def edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2, texture = None):
 			x = cx
 			y = cy
 			z += zi
+	
+	if record_history:
+		block_vol = BlockVolumeHistoryItem(x1, y1, z1, x2, y2, z2, volume, tool, old_colors, new_colors)
+		BlockVolumeHistory = BlockVolumeHistory[:BlockVolumeHistoryId]
+		BlockVolumeHistory.append(block_vol)
+		BlockVolumeHistoryId += 1
+	
 	return True
 	
 
 class Map_Object():
-	def __init__(self, type, state, team, x, y, z, x2, y2, z2):
+	def __init__(self, type, state, team, x, y, z):
 		self.type = type
 		self.state = state
 		self.team = team
 		self.x, self.y, self.z = x, y, z
-		self.x2, self.y2, self.z2 = x2, y2, z2
 		
 
-class MoveObject(Loader):
-	id = 11
-
-	def read(self, reader):
-		self.type = reader.readByte(True)
-		self.state = reader.readByte(True)
-		self.x = reader.readFloat(False)
-		self.y = reader.readFloat(False)
-		self.z = reader.readFloat(False)
-		self.x2 = reader.readFloat(False)
-		self.y2 = reader.readFloat(False)
-		self.z2 = reader.readFloat(False)
-
-	def write(self, writer):
-		writer.writeByte(self.id, True)
-		writer.writeByte(self.type, True)
-		writer.writeByte(self.state, True)
-		writer.writeFloat(self.x, False)
-		writer.writeFloat(self.y, False)
-		writer.writeFloat(self.z, False)
-		writer.writeFloat(self.x2, False)
-		writer.writeFloat(self.y2, False)
-		writer.writeFloat(self.z2, False)
-
-del _client_loaders[11] #remove the original packet
-del _server_loaders[11]
-
-register_packet(MoveObject)
-
-@register_packet_handler(MoveObject)
-def on_MoveObject(self, contained: MoveObject) -> None:
+@register_packet_handler(loaders.MoveObject)
+def on_MoveObject(self, contained: loaders.MoveObject) -> None:
 	type = contained.type
 	state = contained.state
 	x, y, z = contained.x, contained.y, contained.z
 	map = self.protocol.map
 	if not map.is_valid_position(x, y, z):
-		return
-	x2, y2, z2 = contained.x2, contained.y2, contained.z2
-	if not map.is_valid_position(x2, y2, z2):
 		return
 		
 	blue = self.protocol.blue_team
@@ -316,7 +336,7 @@ def on_MoveObject(self, contained: MoveObject) -> None:
 		team = blue
 		if state == SpawnTeam2:
 			team = green
-		self.protocol.spawns.append(Map_Object(type, state, team, x, y, z, x2, y2, z2))
+		self.protocol.spawns.append(Map_Object(type, state, team, x, y, z))
 		self.protocol.broadcast_contained(contained, save=True)
 		return
 
@@ -336,7 +356,7 @@ def on_MoveObject(self, contained: MoveObject) -> None:
 			team = blue
 			if state == 1:
 				team = green
-			self.protocol.territories.append(Map_Object(type, state, team, x, y, z, x2, y2, z2))
+			self.protocol.territories.append(Map_Object(type, state, team, x, y, z))
 		elif state > 2:
 			if len(self.protocol.territories) >= self.protocol.max_territories:
 				return
@@ -345,47 +365,6 @@ def on_MoveObject(self, contained: MoveObject) -> None:
 			return
 		tc_data.set_entities(self.protocol.territories)
 	self.protocol.broadcast_contained(contained, save=True)
-		
-
-class BuildMode(Loader):
-	id = 100
-
-	def read(self, reader):
-		return
-
-	def write(self, writer):
-		writer.writeByte(self.id, True)
-
-register_packet(BuildMode)
-
-@register_packet_handler(BuildMode)
-def on_BuildMode(self, contained) -> None:
-	self.bmode = True
-	current_mode = self.protocol.game_mode
-		
-	if self.protocol.game_mode == CTF_MODE:
-		self.protocol.game_mode = TC_MODE
-	elif self.protocol.game_mode == TC_MODE:
-		self.protocol.game_mode = CTF_MODE
-	self._send_connection_data()
-	for data in self.saved_loaders:
-		packet = enet.Packet(bytes(data), enet.PACKET_FLAG_RELIABLE)
-		self.peer.send(0, packet)
-	
-	self.protocol.game_mode = current_mode
-	self._send_connection_data()
-	for data in self.saved_loaders:
-		packet = enet.Packet(bytes(data), enet.PACKET_FLAG_RELIABLE)
-		self.peer.send(0, packet)
-	self.saved_loaders = None
-	
-	for spawn in self.protocol.spawns:
-		map_object = MoveObject()
-		map_object.type = spawn.type
-		map_object.state = spawn.state
-		map_object.x, map_object.y, map_object.z = spawn.x, spawn.y, spawn.z
-		map_object.x2, map_object.y2, map_object.z2 = spawn.x2, spawn.y2, spawn.z2
-		self.send_contained(map_object)
 	
 
 class BlockVolume(Loader):
@@ -401,22 +380,11 @@ class BlockVolume(Loader):
 		self.x2 = reader.readShort(False, False)
 		self.y2 = reader.readShort(False, False)
 		self.z2 = reader.readShort(False, False)
-		if self.tool == TextureBuild or self.tool == TexturePaint:
-			diff_x, diff_y, diff_z = self.x2 - self.x1, self.y2 - self.y1, self.z2 - self.z1
-			if diff_x < 0:
-				diff_x *= -1
-			if diff_y < 0:
-				diff_x *= -1
-			if diff_z < 0:
-				diff_z *= -1
-			cells = (diff_x + 1) * (diff_y + 1) * (diff_z + 1)
+		if self.tool == TextureBuild:
 			self.texture = []
-			for c in range(cells):
-				colored = reader.readByte(True)
-				self.texture.append(colored)
-				if colored == 1:
-					for i in range(3):
-						self.texture.append(reader.readByte(True))
+			remaining_bytes = reader.size - reader.pos
+			for bytes in range(remaining_bytes):
+				self.texture.append(reader.readByte(True))
 
 	def write(self, writer):
 		writer.writeByte(self.id, True)
@@ -429,7 +397,7 @@ class BlockVolume(Loader):
 		writer.writeShort(self.x2, False, False)
 		writer.writeShort(self.y2, False, False)
 		writer.writeShort(self.z2, False, False)
-		if self.tool == TextureBuild or self.tool == TexturePaint:
+		if self.tool == TextureBuild:
 			for col in self.texture:
 				writer.writeByte(col, True)
 
@@ -476,10 +444,9 @@ def on_BlockVolume(self, contained: BlockVolume) -> None:
 		return
 	
 	edit = False
-	if tool == TextureBuild or tool == TexturePaint:
+	if tool == TextureBuild:
 		texture = contained.texture
-		if len(texture) >= check_volume:
-			edit = edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2, texture)
+		edit = edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2, texture)
 	else:
 		edit = edit_volume(self, volume, tool, x1, y1, z1, x2, y2, z2)
 	
@@ -496,33 +463,130 @@ def on_BlockVolume(self, contained: BlockVolume) -> None:
 	block_volume.x2 = x2
 	block_volume.y2 = y2
 	block_volume.z2 = z2
-	if block_volume.tool == TextureBuild or block_volume.tool == TexturePaint:
+	if block_volume.tool == TextureBuild:
 		block_volume.texture = contained.texture
 	self.protocol.broadcast_contained(block_volume, save=True)
+
+
+@command('ud', 'undo', admin_only=True)
+def undo_BlockVolume(self):
+	global BlockVolumeHistoryId
+	if BlockVolumeHistoryId <= 0:
+		return
+	BlockVolumeHistoryId -= 1
+	old = BlockVolumeHistory[BlockVolumeHistoryId]
+	edit = edit_volume(self, old.volume, TextureBuild, old.x1, old.y1, old.z1, old.x2, old.y2, old.z2, old.old_colors, False)
+	if not edit:
+		return
+	block_volume = BlockVolume()
+	block_volume.player_id = 35
+	block_volume.volume = old.volume
+	block_volume.tool = Destroy
+	block_volume.x1 = old.x1
+	block_volume.y1 = old.y1
+	block_volume.z1 = old.z1
+	block_volume.x2 = old.x2
+	block_volume.y2 = old.y2
+	block_volume.z2 = old.z2
+	self.protocol.broadcast_contained(block_volume, save=True)
+	if 1 not in old.old_colors:
+		return
+	block_volume.tool = TextureBuild
+	block_volume.texture = old.old_colors
+	self.protocol.broadcast_contained(block_volume, save=True)
+
+def make_color(r, g, b):
+	return b | (g << 8) | (r << 16) | (128 << 24)
+@command('rd', 'redo', admin_only=True)
+def redo_blockVolume(self):
+	global BlockVolumeHistoryId
+	if BlockVolumeHistoryId >= len(BlockVolumeHistory):
+		return
+	new = BlockVolumeHistory[BlockVolumeHistoryId]
+	BlockVolumeHistoryId += 1
+	edit = edit_volume(self, new.volume, new.tool, new.x1, new.y1, new.z1, new.x2, new.y2, new.z2, new.new_colors, False)
+	if not edit:
+		return
+	block_volume = BlockVolume()
+	block_volume.player_id = 35
+	block_volume.volume = new.volume
+	block_volume.tool = Destroy
+	block_volume.x1 = new.x1
+	block_volume.y1 = new.y1
+	block_volume.z1 = new.z1
+	block_volume.x2 = new.x2
+	block_volume.y2 = new.y2
+	block_volume.z2 = new.z2
+	self.protocol.broadcast_contained(block_volume, save=True)
+	if new.tool is Destroy:
+		return
+	block_volume.tool = new.tool
+	if block_volume.tool == TextureBuild:
+		block_volume.texture = new.new_colors
+	elif block_volume.tool is not Destroy:
+		color_pkt = loaders.SetColor()
+		color_pkt.player_id = 35
+		r, g, b = new.new_colors
+		color_pkt.value = make_color(r, g, b)
+		self.protocol.broadcast_contained(color_pkt, save=True)
+	self.protocol.broadcast_contained(block_volume, save=True)
 	
+
+def has_MapEditor(self):
+	current_mode = self.protocol.game_mode
 		
+	if self.protocol.game_mode == CTF_MODE:
+		self.protocol.game_mode = TC_MODE
+	elif self.protocol.game_mode == TC_MODE:
+		self.protocol.game_mode = CTF_MODE
+	self._send_connection_data()
+	for data in self.saved_loaders:
+		packet = enet.Packet(bytes(data), enet.PACKET_FLAG_RELIABLE)
+		self.peer.send(0, packet)
+	
+	self.protocol.game_mode = current_mode
+	self._send_connection_data()
+	for data in self.saved_loaders:
+		packet = enet.Packet(bytes(data), enet.PACKET_FLAG_RELIABLE)
+		self.peer.send(0, packet)
+	self.saved_loaders = None
+	
+	for spawn in self.protocol.spawns:
+		map_object = MoveObject()
+		map_object.type = spawn.type
+		map_object.state = spawn.state
+		map_object.x, map_object.y, map_object.z = spawn.x, spawn.y, spawn.z
+		map_object.x2, map_object.y2, map_object.z2 = spawn.x2, spawn.y2, spawn.z2
+		self.send_contained(map_object)
+
+
 
 def apply_script(protocol, connection, config):
 
 	class mapeditor_c(connection):
-		bmode = False
 		builder_position = None
 		builder_respawn = None
 		quick_switch = 1
-	
-		def check_bmode(self):
-			if self is None:
-				return
-			if not self.bmode:
-				self.disconnect(ERROR_WRONG_VERSION)
-				print("kicked %s. Client failed to send back BuildMode confirmation packet in time" % self.name)
 		
-		def on_team_join(self, team):
-			build_mode = BuildMode()
-			self.send_contained(build_mode)
-			schedule = Scheduler(self.protocol)
-			schedule.call_later(10, self.check_bmode)
-			return connection.on_team_join(self, team)
+		@register_packet_handler(loaders.ProtocolExtensionInfo)
+		def on_ext_info_received(c, contained: loaders.ProtocolExtensionInfo):
+			if MapEditorExtension not in contained.extensions:
+				c.disconnect(ERROR_WRONG_VERSION)
+				print("kicked %s. Client doesnt support our version of MapEditor. " % c.name)
+			return connection.on_ext_info_received(c, contained)
+		
+		@register_packet_handler(loaders.VersionResponse)
+		def on_version_info_recieved(self, contained: loaders.VersionResponse):
+			ext_info = loaders.ProtocolExtensionInfo()
+			ext_info.extensions = []
+			ext_info.extensions.append(MapEditorExtension)
+			self.send_contained(ext_info)
+			return connection.on_version_info_recieved(self, contained)
+		
+		def on_join(self):
+			if MapEditorExtension in self.proto_extensions:
+				has_MapEditor(self)
+			return connection.on_join(self)
 		
 			
 		def spawn(self, pos: None = None) -> None:
