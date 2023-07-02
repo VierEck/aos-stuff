@@ -4,7 +4,7 @@ LICENSE: GPL-3.0
 
 
 #### pique/MapEditor.py:
-  - script to make your pique server compatible with OpenSpades MapEditor (https://github.com/VierEck/openspades/tree/map). 
+  - script to make your pique server compatible with OpenSpades MapEditor (https://github.com/VierEck/openspades/tree/map2). 
 
 #### pique/Pubovl.py:
   - a staff tool that allows u to spectate a player without having to join the spectator team for piqueserver. 
