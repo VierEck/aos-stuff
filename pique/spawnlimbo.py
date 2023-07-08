@@ -242,6 +242,10 @@ def apply_script(protocol, connection, config):
 		spawn_limbo_loop = None
 		
 		def on_kill(c, by, kill_type, grenade):
+			entities = list(c.team.get_entities())
+			if len(entities) < 1:
+				return connection.on_kill(c, by, kill_type, grenade)
+
 			p = c.protocol
 			c.allowed_to_spawn = False
 			c.spawn_time = time() + c.get_respawn_time()
