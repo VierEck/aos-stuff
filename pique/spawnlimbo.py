@@ -250,6 +250,10 @@ def apply_script(protocol, connection, config):
 		spawn_limbo_loop = None
 		
 		def on_kill(c, by, kill_type, grenade):
+			entities = list(c.team.get_entities())
+			if len(entities) < 1:
+				return connection.on_kill(c, by, kill_type, grenade)
+
 			p = c.protocol
 			if p.squad_script_exist:
 				if c.squad is not None:
