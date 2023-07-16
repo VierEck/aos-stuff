@@ -6,6 +6,7 @@ SpawnLimbo.
 limbo state for TC gamemode. players can choose a tent to spawn into.
 '''
 
+from piqueserver.server import scripts_option
 from pyspades.constants import BUILD_BLOCK, DESTROY_BLOCK
 from pyspades.common import Vertex3, make_color
 from pyspades import contained as loaders
@@ -18,6 +19,13 @@ import enet
 
 
 spawn_distance = 64
+
+
+def check_squad_script(p):
+	script_names = scripts_option.get()
+	if "squad" in script_names or "piqueserver.scripts.squad" in script_names:
+		return True
+	return False 
 
 
 def send_notice_msg(c):
@@ -243,6 +251,9 @@ def apply_script(protocol, connection, config):
 		
 		def on_kill(c, by, kill_type, grenade):
 			p = c.protocol
+			if p.squad_script_exist:
+				if c.squad is not None:
+					return connection.on_kill(c, by, kill_type, grenade)
 			c.allowed_to_spawn = False
 			c.spawn_time = time() + c.get_respawn_time()
 			send_notice_msg(c)
@@ -275,7 +286,15 @@ def apply_script(protocol, connection, config):
 							dir /= dir.length()
 							dir *= spawn_distance
 							x += dir.x
+							if x <= 0:
+								x = 1
+							if x >= 512:
+								x = 511
 							y += dir.y
+							if y <= 0:
+								y = 0
+							if y >= 512:
+								y = 511
 							z = 60
 							while p.map.get_solid(x, y, z + 1):
 								z -= 1
@@ -284,11 +303,28 @@ def apply_script(protocol, connection, config):
 			return connection.on_input_data_recieved(c, contained)
 		
 		def spawn(c, pos: None = None):
+			p = c.protocol
+			if p.squad_script_exist:
+				if c.squad is not None:
+					return connection.spawn(c)
 			if c.allowed_to_spawn:
 				return connection.spawn(c, pos)
 			else:
 				c.allowed_to_spawn = True
 	
 	
-	return protocol, spawn_limbo_c
+	class spawn_limbo_p(protocol):
+		squad_script_exist = False
+		
+		def on_map_change(p, map_):
+			print("searching for squad script")
+			p.squad_script_exist = check_squad_script(p)
+			if p.squad_script_exist:
+				print("squad script detected")
+			else:
+				print("no squad script detected")
+			return protocol.on_map_change(p, map_)
+	
+	
+	return spawn_limbo_p, spawn_limbo_c
 
