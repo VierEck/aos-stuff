@@ -439,6 +439,7 @@ def apply_script(protocol, connection, config):
 				state_data.state = ctf_data
 	
 			elif game_mode == TC_MODE:
+				tc_data = loaders.TCState()
 				tc_data.set_entities(self.entities)
 				state_data.state = tc_data
 			
