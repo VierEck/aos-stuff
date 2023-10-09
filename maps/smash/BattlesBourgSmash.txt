@@ -1,0 +1,5 @@
+name = 'Battle s Bourg Smash'
+version = '1'
+author = 'Gibbs3333, VierEck.'
+description = ('Team R3S. Modified by VierEck for the Smash gamemode')
+extensions = {}
