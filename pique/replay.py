@@ -304,6 +304,8 @@ def apply_script(protocol, connection, config):
 			self.record_length = None
 			self.auto_delete_if_too_small()
 			self.is_auto = False
+			if self.recorder_id <32:    
+				self.player_ids.put_back(self.recorder_id)
 		
 		def write_pack(self, contained):
 			data = ByteWriter()
