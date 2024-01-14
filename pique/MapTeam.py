@@ -5,7 +5,7 @@ example:
 
 	extensions = {
 		"TeamName1"  : "Pink",
-		"TeamColor1" : (255,   0, 255),
+		"TeamColor1" : (255, 0, 255),
 		"TeamName2"  : "Yellow",
 		"TeamColor2" : (255, 255, 0),
 	}
@@ -13,6 +13,7 @@ example:
 if one of these extension item is missing it will default to its contemporary value from config.toml
 
 Author: VierEck.
+Credit: Rakete (for the idea)
 '''
 
 from piqueserver.config import config
