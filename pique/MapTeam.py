@@ -20,7 +20,7 @@ from piqueserver.config import config
 
 def apply_script(pro, con, cfg):
 
-	class MapTeamColor_P(pro):
+	class MapTeam_P(pro):
 		
 		def on_map_change(p, map_):
 			ext = p.map_info.extensions
@@ -47,4 +47,4 @@ def apply_script(pro, con, cfg):
 			
 			return pro.on_map_change(p, map_)
 	
-	return MapTeamColor_P, con
+	return MapTeam_P, con
