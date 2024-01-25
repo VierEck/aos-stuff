@@ -4,7 +4,7 @@ explosion on impact with block
 this is a barebones supplementory script which doesnt work on its own. modify or create a script extending on it.
 player.has_NadeLauncher must be set to True to if u want a player to be able to use the NadeLauncher. 
 
-based on the nadelauncher from Teaboy's server. (he didnt release his script or if he did than im not aware of it)
+a recreation of the nadelauncher from Teaboy's server. (he didnt release his script or if he did than im not aware of it)
 some parts of this code r from nadelauncher_ohnoez.py (maintainer: Wizardian):
 	https://github.com/aloha-pk/spades-public/blob/master/legacy/scripts/nadelauncher_ohnoez.py
 some parts of this code r from airstrike2.py by hompy:
