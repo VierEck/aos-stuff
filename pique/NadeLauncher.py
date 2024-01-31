@@ -17,7 +17,7 @@ Authors:
 
 from time import monotonic as time
 from pyspades.contained import GrenadePacket
-from pyspades.constants import UPDATE_FREQUENCY
+from pyspades.constants import UPDATE_FREQUENCY, WEAPON_TOOL
 from pyspades.world import Grenade
 
 
@@ -32,7 +32,7 @@ def apply_script(pro, con, cfg):
 		NadeLauncher_last_time = 0.0
 		
 		def on_shoot_set(c, fire):
-			if c.has_NadeLauncher and fire:
+			if c.has_NadeLauncher and fire and c.tool == WEAPON_TOOL:
 				if time() > c.NadeLauncher_last_time + c.weapon_object.delay:
 					p = c.protocol
 					c.NadeLauncher_last_time = time()
