@@ -21,15 +21,13 @@ from pyspades.constants import UPDATE_FREQUENCY, WEAPON_TOOL
 from pyspades.world import Grenade
 
 
-VELOCITY_SCALE = 1
-
-
 #
 def apply_script(pro, con, cfg):
 
 	class NadeLauncher_C(con):
 		has_NadeLauncher       = False
 		NadeLauncher_last_time = 0.0
+		NadeLauncher_velocity  = 1.0
 		
 		def on_shoot_set(c, fire):
 			if c.has_NadeLauncher and fire and c.tool == WEAPON_TOOL:
@@ -37,9 +35,9 @@ def apply_script(pro, con, cfg):
 					p = c.protocol
 					c.NadeLauncher_last_time = time()
 					
-					pos = c.world_object.position
-					vel = c.world_object.orientation
-					vel *= VELOCITY_SCALE
+					pos  = c.world_object.position
+					vel  = c.world_object.orientation
+					vel *= c.NadeLauncher_velocity
 					
 					nade = p.world.create_object(Grenade, 0.0, pos, None, vel, c.grenade_exploded)
 					nade.team = c.team
