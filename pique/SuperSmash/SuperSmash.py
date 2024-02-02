@@ -3,8 +3,8 @@ Based on the SmashOff gamemode by Dr.Morphman. Knock ur opponents into waters to
 This new version has smoother knockback animation, Items and Ultimate Powers for each weapon class!
 
 This is the SuperSmashOff base script. for the full package download following scripts:
-	NadeLauncher.py
-	SmashPowers.py
+	NadeLauncher.py (https://github.com/VierEck/aos-stuff/blob/main/pique/NadeLauncher.py)
+	SmashPowers.py (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashPowers.py)
 	SmashItems.py
 to set the actual gamemode logic install ONE of the following gamemode scripts:
 	SuperSmashTimedKills.py
@@ -89,6 +89,11 @@ def apply_script(pro, con, cfg):
 		def on_spawn(c, pos):
 			c.set_hp(1)
 			return con.on_spawn(c, pos)
+		
+		def on_spawn_location(c, pos):
+			x, y, z = c.protocol.get_random_location(True)
+			z -= 2
+			return (x, y, z) 
 		
 		def set_hp(c, value: Union[int, float], hit_by: Optional['ServerConnection'] = None, kill_type: int = WEAPON_KILL, 
 		hit_indicator: Optional[Tuple[float, float, float]] = None, grenade: Optional[world.Grenade] = None) -> None:
@@ -251,6 +256,9 @@ def apply_script(pro, con, cfg):
 				p.smash_update_loop_task.cancel()
 				p.smash_update_loop_task = None
 			return pro.on_map_leave(p)
+		
+		def smash_get_MAX_DAMAGE(p):
+			return MAX_DAMAGE
 	
 	
 	return SuperSmash_P, SuperSmash_C
