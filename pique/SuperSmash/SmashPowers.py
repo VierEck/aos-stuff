@@ -17,7 +17,6 @@ Authors:
 import asyncio
 from random import randint
 from time import monotonic as time
-from twisted.internet import reactor
 from piqueserver.config import config
 from pyspades.contained import Restock, FogColor
 from pyspades.constants import WEAPON_TOOL
