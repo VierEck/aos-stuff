@@ -1,20 +1,20 @@
 '''
 Based on the SmashOff gamemode by Dr.Morphman. Knock ur opponents into waters to kill them. 
-This new version has smoother knockback animation, Items and Ultimate Powers for each weapon class!
+This new version has air jumps, smoother knockback animation, Items and Ultimate Powers for each weapon class!
 
 This is the SuperSmashOff base script. for the full package download following scripts and setup this hirarchy:
 	SuperSmash.py
 	NadeLauncher.py        (https://github.com/VierEck/aos-stuff/blob/main/pique/NadeLauncher.py)
 	SmashPowers.py         (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashPowers.py)
 	SmashItems.py          (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashItems.py)
-	SmashItemConsumable.py 
-	SmashItemCompanion.py
-	SmashItemAbility.py
+	SmashItemBuffs.py      (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashItemBuffs.py)
+	SmashItemAbilities.py  ()
+	SmashItemCompanions.py ()
 
 to set the actual gamemode logic install ONE of the following gamemode scripts:
-	SuperSmashTimedKills.py
-	SuperSmashTimedRatio.py
-	SuperSmashTimedEllimination.py
+	SuperSmashTimedKills.py        ()
+	SuperSmashTimedRatio.py        ()
+	SuperSmashTimedEllimination.py ()
 
 original SmashOff Gamemode script by Dr.Morphman:
 	https://aloha.pk/t/smashoff/13723/3
@@ -118,6 +118,12 @@ def apply_script(pro, con, cfg):
 			c.world_object.velocity.set(*(vel).get())
 			c.send_chat_notice("AirJumps: %.0f" % c.smash_charges)
 		
+		def smash_on_fall(c, dmg): #hijack interface of on_fall. on_fall is only called when there is fall dmg
+			pass
+		
+		def smash_on_fall_always(c): #interface for everytime player falls, even if there is no fall dmg
+			pass
+		
 		def smash_on_hit(c, hit_amount, pl, hit_type, nade):
 			pass
 		
@@ -130,6 +136,10 @@ def apply_script(pro, con, cfg):
 			x, y, z = c.protocol.get_random_location(True)
 			z -= 2
 			return (x, y, z) 
+		
+		def on_fall(c, dmg):
+			c.smash_on_fall(dmg)
+			return False
 		
 		def set_hp(c, value: Union[int, float], hit_by: Optional['ServerConnection'] = None, kill_type: int = WEAPON_KILL, 
 		hit_indicator: Optional[Tuple[float, float, float]] = None, grenade: Optional[world.Grenade] = None) -> None:
@@ -222,10 +232,12 @@ def apply_script(pro, con, cfg):
 							if pl.world_object.position.z > 61:
 								pl.kill(pl.smash_killer, pl.smash_killer_type, None)
 							elif not pl.world_object.airborne: #on ground
+								if pl.smash_can_charge:
+									pl.smash_on_fall_always()
 								pl.smash_can_charge = False
 								pl.smash_charges    = CHARGE_LIMIT
 								if   pl.smash_anim_state == 1: #walk
-									if pl.world_object.velocity.length() <= 0.25:
+									if pl.world_object.velocity.length() <= 0.25: #measured (max vel for walking)
 										pl.smash_is_charging = False
 										pl.smash_killer   = None
 								elif pl.smash_anim_state == 2: #sprint
@@ -240,7 +252,7 @@ def apply_script(pro, con, cfg):
 									if pl.world_object.velocity.length() <= 0.125:
 										pl.smash_is_charging = False
 										pl.smash_killer   = None
-								else:                 #stand (and jump)
+								else:                          #stand (and jump)
 									if pl.world_object.velocity.length() <= 0.001:
 										pl.smash_is_charging = False
 										pl.smash_killer   = None
