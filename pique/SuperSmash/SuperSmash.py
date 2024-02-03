@@ -2,10 +2,15 @@
 Based on the SmashOff gamemode by Dr.Morphman. Knock ur opponents into waters to kill them. 
 This new version has smoother knockback animation, Items and Ultimate Powers for each weapon class!
 
-This is the SuperSmashOff base script. for the full package download following scripts:
-	NadeLauncher.py (https://github.com/VierEck/aos-stuff/blob/main/pique/NadeLauncher.py)
-	SmashPowers.py (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashPowers.py)
-	SmashItems.py
+This is the SuperSmashOff base script. for the full package download following scripts and setup this hirarchy:
+	SuperSmash.py
+	NadeLauncher.py        (https://github.com/VierEck/aos-stuff/blob/main/pique/NadeLauncher.py)
+	SmashPowers.py         (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashPowers.py)
+	SmashItems.py          (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashItems.py)
+	SmashItemConsumable.py 
+	SmashItemCompanion.py
+	SmashItemAbility.py
+
 to set the actual gamemode logic install ONE of the following gamemode scripts:
 	SuperSmashTimedKills.py
 	SuperSmashTimedRatio.py
@@ -28,7 +33,7 @@ Authors:
 import asyncio
 from time import monotonic as time
 from typing import Any, Optional, Sequence, Tuple, Union
-from pyspades.constants import CTF_MODE, WEAPON_KILL
+from pyspades.constants import CTF_MODE, WEAPON_KILL, WEAPON_KILL, HEADSHOT_KILL, MELEE_KILL, GRENADE_KILL
 from piqueserver.config import config
 from pyspades.contained import SetHP
 from pyspades import world
@@ -86,6 +91,37 @@ def apply_script(pro, con, cfg):
 		smash_killer         = None
 		smash_killer_type    = 0
 		
+		def smash_get_dmg(c, weap, hit_type, hit_amount):
+			if hit_type == WEAPON_KILL: #body or limb 
+				if hit_amount in body_amount_indicators:
+					return DMG_VALS[weap][1]
+				if hit_amount in limb_amount_indicators:
+					return DMG_VALS[weap][2]
+			if hit_type == HEADSHOT_KILL: #head
+				return DMG_VALS[weap][0]
+			if hit_type == MELEE_KILL: #spade
+				return DMG_SPADE
+			if hit_type == GRENADE_KILL:
+				return DMG_NADE
+			return 0
+		
+		def smash_apply_dmg(c, dmg):
+			c.set_hp(c.hp + dmg)
+		
+		def smash_apply_knockback(c, vel):
+			c.smash_is_charging = True
+			c.world_object.velocity.set(*(vel).get())
+		
+		def smash_apply_charge(c, vel):
+			c.smash_is_charging = True
+			c.smash_charges    -= 1
+			c.world_object.velocity.set(*(vel).get())
+			c.send_chat_notice("AirJumps: %.0f" % c.smash_charges)
+		
+		def smash_on_hit(c, hit_amount, pl, hit_type, nade):
+			pass
+		
+		
 		def on_spawn(c, pos):
 			c.set_hp(1)
 			return con.on_spawn(c, pos)
@@ -114,28 +150,6 @@ def apply_script(pro, con, cfg):
 			c.send_contained(set_hp)
 			#hijack set_hp. this is due to default set_hp setting an upper bound at 100 hp
 		
-		def smash_get_dmg(c, weap, hit_type, hit_amount):
-			if hit_type == 0: #body or limb 
-				if hit_amount in body_amount_indicators:
-					return DMG_VALS[weap][1]
-				if hit_amount in limb_amount_indicators:
-					return DMG_VALS[weap][2]
-			if hit_type == 1: #head
-				return DMG_VALS[weap][0]
-			if hit_type == 2: #spade
-				return DMG_SPADE
-			return DMG_NADE
-		
-		def smash_apply_dmg(c, dmg): #interface.
-			c.set_hp(c.hp + dmg)
-		
-		def smash_apply_knockback(c, vel): #interface
-			c.smash_is_charging = True
-			c.world_object.velocity.set(*(vel).get())
-		
-		def smash_on_hit(c, hit_amount, pl, hit_type, nade): #interface
-			pass
-		
 		def on_hit(c, hit_amount, pl, hit_type, nade):
 			dmg = 0
 			ret = c.smash_on_hit(hit_amount, pl, hit_type, nade)
@@ -157,7 +171,8 @@ def apply_script(pro, con, cfg):
 			if not nade:
 				aim = c.world_object.orientation
 				if c.weapon_object.id == 2 and time() < c.smash_last_pump_time + 0.1:
-					k += pl.world_object.velocity.length() #each pellet in a shot add to one big knockback
+					#each pellet in a shot add to one big knockback
+					k += pl.world_object.velocity.length() - 1 - pl.hp / 255.0
 			else:
 				aim = pl.world_object.position - nade.position
 				distFactor = (28.0 - aim.length()) / 28.0 #max nade dmg distance roughly 28 blocks
@@ -191,12 +206,7 @@ def apply_script(pro, con, cfg):
 			else: #walk
 				c.smash_anim_state = 1 
 			if sneak and not c.smash_last_sneak and c.smash_charges > 0 and c.smash_can_charge:
-				aim                 = c.world_object.orientation
-				k                   = CHARGE_POWER
-				c.smash_is_charging = True
-				c.smash_charges    -= 1
-				c.world_object.velocity.set(*(aim*k).get())
-				c.send_chat_notice("AirJumps: %.0f" % c.smash_charges)
+				c.smash_apply_charge(c.world_object.orientation * CHARGE_POWER)
 			c.smash_last_sneak = sneak
 			return con.on_animation_update(c, jump, crouch, sneak, sprint)
 	
@@ -257,8 +267,29 @@ def apply_script(pro, con, cfg):
 				p.smash_update_loop_task = None
 			return pro.on_map_leave(p)
 		
+		def smash_get_FPS(p):
+			return FPS
+		
+		def smash_get_CHARGE_LIMIT(p):
+			return CHARGE_LIMIT
+		
+		def smash_get_CHARGE_POWER(p):
+			return CHARGE_POWER
+			
+		def smash_get_DMG_POWER(p):
+			return DMG_POWER
+		
 		def smash_get_MAX_DAMAGE(p):
 			return MAX_DAMAGE
+		
+		def smash_get_DMG_VALS(p):
+			return DMG_VALS
+		
+		def smash_get_DMG_SPADE(p):
+			return DMG_SPADE
+		
+		def smash_get_DMG_NADE(p):
+			return DMG_NADE		
 	
 	
 	return SuperSmash_P, SuperSmash_C
