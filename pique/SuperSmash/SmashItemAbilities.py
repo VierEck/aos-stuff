@@ -134,7 +134,7 @@ def Earthquake(c, pos = None):
 		if pl.world_object and not pl.world_object.dead and pl is not c:
 			pl.smash_apply_dmg(20)
 			pl.smash_apply_knockback(Vertex3(0, 0, -2))
-	c.send_chat("Earthquake!")
+	p.broadcast_chat("Earthquake!")
 
 
 #legendary items
