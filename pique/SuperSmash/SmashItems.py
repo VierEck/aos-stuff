@@ -3,7 +3,9 @@ Items in SuperSmashOff.
 supplementory script for SuperSmashOff Gamemode
 
 this is the base items script. to actually add items u need to install following supplementory scripts:
-	SmashItemConsumable.py
+	SmashItemBuffs.py
+	SmashItemAbilities.py
+	SmashItemCompanions.py
 
 Inspired by the Christmas Present Item Blocks from Sauerkraut Survival Server (by 1AmYF)
 
@@ -80,9 +82,11 @@ def apply_script(pro, con, cfg):
 			2: {}, #legendary items
 		}
 		
-		def smash_add_item_to_dict(p, item_type: int, name: str, method: staticmethod): #use this to add items to dict
+		def smash_add_item_to_dict(p, item_type: int, method: staticmethod, name = None): #use this to add items to dict
 			if item_type < 0 or item_type > 2:
 				return
+			if name is None:
+				name = method.__name__
 			for key in p.SMASH_ITEM_DICT:
 				if key == name:
 					return
@@ -156,6 +160,12 @@ def apply_script(pro, con, cfg):
 				ITEM_COLOR_DECENT = ext["item_color_decent"]
 			if "item_color_legendary" in ext:
 				ITEM_COLOR_LEGENDARY = ext["item_color_legendary"]
+			
+			#adjust item amount according to map size
+			if "max_items" in ext:
+				MAX_ITEMS = ext["max_items"]
+			if "item_spawn_rate" int ext:
+				ITEM_SPAWN_RATE = ext["item_spawn_rate"]
 				
 			if p.smash_item_spawn_loop_task is None:
 				p.smash_item_spawn_loop_task = asyncio.ensure_future(p.smash_item_spawn_loop())
