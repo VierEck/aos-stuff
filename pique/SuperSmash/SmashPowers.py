@@ -19,7 +19,7 @@ from random import randint
 from time import monotonic as time
 from piqueserver.config import config
 from pyspades.contained import Restock, FogColor
-from pyspades.constants import WEAPON_TOOL
+from pyspades.constants import WEAPON_TOOL, GRENADE_KILL
 from pyspades.common import make_color
 
 smash_cfg = config.section('SuperSmashOff')
@@ -137,11 +137,11 @@ def apply_script(pro, con, cfg):
 				
 			elif c.weapon_object.id == 1: #smg
 				#couldnt think of anything better, but tbh smgay deserves a boring ult
-				return c.smash_get_dmg(c.weapon_object.id, hit_type, hit_amount) * 2
+				return c.smash_get_dmg(c.weapon_object.id, hit_type, hit_amount) * 3
 				
 			else: #pump
 				#give some love to the shotgun. it needs it.
-				if nade is None and c.tool == WEAPON_TOOL:
+				if nade is None and hit_type == GRENADE_KILL:
 					return False
 				
 			return con.smash_on_hit(c, hit_amount, pl, hit_type, nade)
