@@ -26,9 +26,9 @@ smash_cfg = config.section('SuperSmashOff')
 
 HOLD_INTEL_TIME = smash_cfg.option("hold_intel_time", 15).get() #in sec
 POWER_TIME      = smash_cfg.option("power_time"     , 30).get()
-INTEL_TIME      = smash_cfg.option("intel_appear_time"     , 60 * 2).get()
-INTEL_APPEAR_TIME_LOWER = smash_cfg.option("intel_appear_time_min", 60 * 3).get() #min, max random time
-INTEL_APPEAR_TIME_UPPER = smash_cfg.option("intel_appear_time_max", 60 * 4).get()
+INTEL_TIME      = smash_cfg.option("intel_appear_time"     , 90).get()
+INTEL_APPEAR_TIME_LOWER = smash_cfg.option("intel_appear_time_min", 60).get() #min, max random time
+INTEL_APPEAR_TIME_UPPER = smash_cfg.option("intel_appear_time_max", 60 * 2).get()
 
 def refill_ammo(c):
 	c.grenades = 3
@@ -147,7 +147,7 @@ def apply_script(pro, con, cfg):
 			return con.smash_on_hit(c, hit_amount, pl, hit_type, nade)
 		
 		def smash_apply_dmg(c, dmg):
-			if c.smash_killer.has_NadeLauncher:
+			if c.smash_killer is not None and c.smash_killer.has_NadeLauncher:
 				if c != c.smash_killer:
 					c.set_hp(c.hp + dmg * 2) #boost dmg for pump ult
 				return #dont do dmg on urself during pump ult
