@@ -8,7 +8,7 @@ This is the SuperSmashOff base script. for the full package download following s
 	SmashPowers.py         (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashPowers.py)
 	SmashItems.py          (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashItems.py)
 	SmashItemBuffs.py      (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashItemBuffs.py)
-	SmashItemAbilities.py  ()
+	SmashItemAbilities.py  (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashItemAbilities.py)
 	SmashItemCompanions.py ()
 
 to set the actual gamemode logic install ONE of the following gamemode scripts:
@@ -33,7 +33,7 @@ Authors:
 import asyncio
 from time import monotonic as time
 from typing import Any, Optional, Sequence, Tuple, Union
-from pyspades.constants import CTF_MODE, WEAPON_KILL, WEAPON_KILL, HEADSHOT_KILL, MELEE_KILL, GRENADE_KILL
+from pyspades.constants import CTF_MODE, WEAPON_KILL, WEAPON_KILL, HEADSHOT_KILL, MELEE_KILL, GRENADE_KILL, SHOTGUN_WEAPON
 from piqueserver.config import config
 from pyspades.contained import SetHP
 from pyspades import world
@@ -91,6 +91,19 @@ def apply_script(pro, con, cfg):
 		smash_killer         = None
 		smash_killer_type    = 0
 		
+		def smash_apply_charge(c, vel):
+			c.smash_is_charging = True
+			c.smash_charges    -= 1
+			c.world_object.velocity.set(*(vel).get())
+			c.send_chat_notice("AirJumps: %.0f" % c.smash_charges)
+		
+		def smash_apply_dmg(c, dmg):
+			c.set_hp(c.hp + dmg)
+		
+		def smash_apply_knockback(c, vel):
+			c.smash_is_charging = True
+			c.world_object.velocity.set(*(vel).get())
+		
 		def smash_get_dmg(c, weap, hit_type, hit_amount):
 			if hit_type == WEAPON_KILL: #body or limb 
 				if hit_amount in body_amount_indicators:
@@ -104,19 +117,6 @@ def apply_script(pro, con, cfg):
 			if hit_type == GRENADE_KILL:
 				return DMG_NADE
 			return 0
-		
-		def smash_apply_dmg(c, dmg):
-			c.set_hp(c.hp + dmg)
-		
-		def smash_apply_knockback(c, vel):
-			c.smash_is_charging = True
-			c.world_object.velocity.set(*(vel).get())
-		
-		def smash_apply_charge(c, vel):
-			c.smash_is_charging = True
-			c.smash_charges    -= 1
-			c.world_object.velocity.set(*(vel).get())
-			c.send_chat_notice("AirJumps: %.0f" % c.smash_charges)
 		
 		def smash_on_fall(c, dmg): #hijack interface of on_fall. on_fall is only called when there is fall dmg
 			pass
@@ -180,7 +180,7 @@ def apply_script(pro, con, cfg):
 			k  *= 1.0 + (pl.hp + dmg) / (255.0 + MAX_DAMAGE)
 			if not nade:
 				aim = c.world_object.orientation
-				if c.weapon_object.id == 2 and time() < c.smash_last_pump_time + 0.1:
+				if c.weapon_object.id == SHOTGUN_WEAPON and time() < c.smash_last_pump_time + 0.1:
 					#each pellet in a shot add to one big knockback
 					k += pl.world_object.velocity.length() - 1 - pl.hp / 255.0
 			else:
@@ -193,7 +193,7 @@ def apply_script(pro, con, cfg):
 			pl.smash_apply_dmg(dmg)
 			pl.smash_apply_knockback(aim*k)
 			
-			if c.weapon_object.id == 2:			
+			if c.weapon_object.id == SHOTGUN_WEAPON:			
 				c.smash_last_pump_time = time()
 			
 			return False #hijack on_hit. we dont want to do actual player damage, but other scripts may break.
@@ -301,7 +301,7 @@ def apply_script(pro, con, cfg):
 			return DMG_SPADE
 		
 		def smash_get_DMG_NADE(p):
-			return DMG_NADE		
+			return DMG_NADE
 	
 	
 	return SuperSmash_P, SuperSmash_C
