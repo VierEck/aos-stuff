@@ -34,10 +34,6 @@ def apply_script(pro, con, cfg):
 		NadeLauncher_last_time = 0.0
 		NadeLauncher_speed     = 1.0
 		
-		def on_spawn(c, pos):
-			c.protocol.NadeLauncher_list.append(c)
-			return con.on_spawn(c, pos)
-		
 		def NadeLauncher_on_nade_exploded(c, nade):
 			c.grenade_exploded(nade)
 		
