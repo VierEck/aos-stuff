@@ -34,6 +34,22 @@ def apply_script(pro, con, cfg):
 		NadeLauncher_last_time = 0.0
 		NadeLauncher_speed     = 1.0
 		
+		def NadeLauncher_give(c):
+			p = c.protocol
+			if c not in p.NadeLauncher_list:
+				p.NadeLauncher_list.append(c)
+		
+		def NadeLauncher_remove(c):
+			p = c.protocol
+			if c in p.NadeLauncher_list:
+				p.NadeLauncher_list.remove(c)
+		
+		def NadeLauncher_has(c):
+			return c in p.NadeLauncher_list
+		
+		def NadeLauncher_set_speed(c, speed):
+			c.NadeLauncher_speed = speed
+		
 		def NadeLauncher_on_nade_exploded(c, nade):
 			c.grenade_exploded(nade)
 		
