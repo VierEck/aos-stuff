@@ -19,7 +19,7 @@ from random import randint
 from time import monotonic as time
 from piqueserver.config import config
 from pyspades.contained import Restock, FogColor
-from pyspades.constants import WEAPON_TOOL, GRENADE_KILL
+from pyspades.constants import WEAPON_TOOL, GRENADE_KILL, RIFLE_WEAPON, SMG_WEAPON, SHOTGUN_WEAPON
 from pyspades.common import make_color
 
 smash_cfg = config.section('SuperSmashOff')
@@ -29,6 +29,7 @@ POWER_TIME      = smash_cfg.option("power_time"     , 30).get()
 INTEL_TIME      = smash_cfg.option("intel_appear_time"     , 90).get()
 INTEL_APPEAR_TIME_LOWER = smash_cfg.option("intel_appear_time_min", 60).get() #min, max random time
 INTEL_APPEAR_TIME_UPPER = smash_cfg.option("intel_appear_time_max", 60 * 2).get()
+
 
 def refill_ammo(c):
 	c.grenades = 3
@@ -87,9 +88,9 @@ def apply_script(pro, con, cfg):
 			fog_pkt = FogColor()
 			fog_pkt.color = make_color(128, 0, 0)
 			p.broadcast_contained(fog_pkt)
-			if c.weapon_object.id == 2: #pump
-				c.has_NadeLauncher = True
-				c.NadeLauncher_velocity = 2.0
+			if c.weapon_object.id == SHOTGUN_WEAPON: #pump
+				c.NadeLauncher_give()
+				c.NadeLauncher_set_speed(2.0)
 			broadcast_error(p, c.name + " has unleashed his Ultimate Power")
 		
 		def smash_ult_end(c):
@@ -100,8 +101,8 @@ def apply_script(pro, con, cfg):
 			r, g, b = p.fog_color
 			fog_pkt.color = make_color(r, g, b)
 			p.broadcast_contained(fog_pkt)
-			if c.weapon_object.id == 2:
-				c.has_NadeLauncher = False
+			if c.weapon_object.id == SHOTGUN_WEAPON:
+				c.NadeLauncher_remove()
 			c.drop_flag()
 			set_intel(c.team.other.flag, (0, 0, 0))
 			broadcast_warning(p, c.name + " ran out of Ultimate Power")
@@ -117,7 +118,7 @@ def apply_script(pro, con, cfg):
 						pl.drop_flag()
 				return None
 			
-			if c.weapon_object.id == 0: #rifle
+			if c.weapon_object.id == RIFLE_WEAPON: #rifle
 				#lethal bullets in the hands of a good player is overpowered
 				if   hit_type == 0: #body or limb
 					if hit_amount == 49:
@@ -135,23 +136,16 @@ def apply_script(pro, con, cfg):
 					pl.kill(c, hit_type, None)
 				return False
 				
-			elif c.weapon_object.id == 1: #smg
+			elif c.weapon_object.id == SMG_WEAPON: #smg
 				#couldnt think of anything better, but tbh smgay deserves a boring ult
 				return c.smash_get_dmg(c.weapon_object.id, hit_type, hit_amount) * 3
 				
 			else: #pump
 				#give some love to the shotgun. it needs it.
 				if nade is None and hit_type == GRENADE_KILL:
-					return False
+					return c.smash_get_dmg(SHOTGUN_WEAPON, GRENADE_KILL, hit_amount) * 2
 				
 			return con.smash_on_hit(c, hit_amount, pl, hit_type, nade)
-		
-		def smash_apply_dmg(c, dmg):
-			if c.smash_killer is not None and c.smash_killer.has_NadeLauncher:
-				if c != c.smash_killer:
-					c.set_hp(c.hp + dmg * 2) #boost dmg for pump ult
-				return #dont do dmg on urself during pump ult
-			con.smash_apply_dmg(c, dmg)
 		
 		def on_kill(c, killer, kill_type, nade):
 			p = c.protocol
