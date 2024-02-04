@@ -33,7 +33,8 @@ Authors:
 import asyncio
 from time import monotonic as time
 from typing import Any, Optional, Sequence, Tuple, Union
-from pyspades.constants import CTF_MODE, WEAPON_KILL, WEAPON_KILL, HEADSHOT_KILL, MELEE_KILL, GRENADE_KILL, SHOTGUN_WEAPON
+from pyspades.constants import (CTF_MODE, WEAPON_KILL, WEAPON_KILL, HEADSHOT_KILL, MELEE_KILL, 
+                                GRENADE_KILL, RIFLE_WEAPON, SMG_WEAPON, SHOTGUN_WEAPON)
 from piqueserver.config import config
 from pyspades.contained import SetHP
 from pyspades import world
@@ -51,17 +52,17 @@ DMG_SPADE = smash_cfg.option("dmg_spade", 20).get()
 DMG_NADE  = smash_cfg.option("dmg_nade" , 30).get() #ranged splash dmg
 
 DMG_VALS = {
-	0 : { #rifle
+	RIFLE_WEAPON : {   #rifle
 		0: smash_cfg.option("dmg_rifle_head", 15).get(), #head
 		1: smash_cfg.option("dmg_rifle_body", 10).get(), #body
 		2: smash_cfg.option("dmg_rifle_limb",  5).get(), #limb
 	},
-	1 : { #smg
+	SMG_WEAPON : {     #smg
 		0: smash_cfg.option("dmg_smg_head", 3).get(),
 		1: smash_cfg.option("dmg_smg_body", 2).get(),
 		2: smash_cfg.option("dmg_smg_limb", 1).get(),
 	},
-	2 : { #pump. dmg for each pellet
+	SHOTGUN_WEAPON : { #pump. dmg for each pellet
 		0: smash_cfg.option("dmg_pump_head", 5).get(),
 		1: smash_cfg.option("dmg_pump_body", 3).get(),
 		2: smash_cfg.option("dmg_pump_limb", 2).get(),
