@@ -33,8 +33,8 @@ Authors:
 import asyncio
 from time import monotonic as time
 from typing import Any, Optional, Sequence, Tuple, Union
-from pyspades.constants import (CTF_MODE, WEAPON_KILL, WEAPON_KILL, HEADSHOT_KILL, MELEE_KILL, 
-                                GRENADE_KILL, RIFLE_WEAPON, SMG_WEAPON, SHOTGUN_WEAPON)
+from pyspades.constants import (WEAPON_KILL, HEADSHOT_KILL, MELEE_KILL, GRENADE_KILL, 
+                                RIFLE_WEAPON, SMG_WEAPON, SHOTGUN_WEAPON)
 from piqueserver.config import config
 from pyspades.contained import SetHP
 from pyspades import world
@@ -44,7 +44,7 @@ smash_cfg = config.section("SuperSmashOff")
 
 FPS = smash_cfg.option("FPS", 120).get() #clientside position update rate. for smooth overall gameplay u need higher ups.
 
-CHARGE_LIMIT = smash_cfg.option("charge_amount"   , 3).get()
+CHARGE_LIMIT = smash_cfg.option("airjump_amount"  , 3).get()
 CHARGE_POWER = smash_cfg.option("airjump_power"   , 1).get()
 DMG_POWER    = smash_cfg.option("knockback_power" , 1).get()
 
@@ -132,11 +132,6 @@ def apply_script(pro, con, cfg):
 		def on_spawn(c, pos):
 			c.set_hp(1)
 			return con.on_spawn(c, pos)
-		
-		def on_spawn_location(c, pos):
-			x, y, z = c.protocol.get_random_location(True)
-			z -= 2
-			return (x, y, z) 
 		
 		def on_fall(c, dmg):
 			c.smash_on_fall(dmg)
