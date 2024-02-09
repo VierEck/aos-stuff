@@ -164,7 +164,7 @@ def apply_script(pro, con, cfg):
 			#adjust item amount according to map size
 			if "max_items" in ext:
 				MAX_ITEMS = ext["max_items"]
-			if "item_spawn_rate" int ext:
+			if "item_spawn_rate" in ext:
 				ITEM_SPAWN_RATE = ext["item_spawn_rate"]
 				
 			if p.smash_item_spawn_loop_task is None:
