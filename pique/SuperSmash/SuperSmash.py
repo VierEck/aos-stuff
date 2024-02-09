@@ -12,9 +12,10 @@ This is the SuperSmashOff base script. for the full package download following s
 	SmashItemCompanions.py ()
 
 to set the actual gamemode logic install ONE of the following gamemode scripts:
-	SuperSmashTimedKills.py        ()
-	SuperSmashTimedRatio.py        ()
-	SuperSmashTimedEllimination.py ()
+	timed kills:
+		SuperSmashTK.py ()
+	timed elimination:
+		SuperSmashTE.py ()
 
 original SmashOff Gamemode script by Dr.Morphman:
 	https://aloha.pk/t/smashoff/13723/3
@@ -83,14 +84,16 @@ limb_amount_indicators = [33, 18, 16]
 def apply_script(pro, con, cfg):
 
 	class SuperSmash_C(con):
-		smash_charges        = 0
-		smash_is_charging    = False
-		smash_can_charge     = False
-		smash_anim_state     = 0
-		smash_last_sneak     = False
-		smash_last_pump_time = 0
-		smash_killer         = None
-		smash_killer_type    = 0
+		smash_charges         = 0
+		smash_is_charging     = False
+		smash_can_charge      = False
+		smash_anim_state      = 0
+		smash_last_sneak      = False
+		smash_last_pump_time  = 0
+		smash_killer          = None
+		smash_killer_type     = 0
+		smash_last_fall_time  = 0 #pique physics is wonky. airborne time needs to be
+		smash_start_fall_time = 0 #measured for smash_on_fall_always() to work correctly
 		
 		def smash_apply_charge(c, vel):
 			c.smash_is_charging = True
@@ -229,9 +232,11 @@ def apply_script(pro, con, cfg):
 								pl.kill(pl.smash_killer, pl.smash_killer_type, None)
 							elif not pl.world_object.airborne: #on ground
 								if pl.smash_can_charge:
-									pl.smash_on_fall_always()
-								pl.smash_can_charge = False
-								pl.smash_charges    = CHARGE_LIMIT
+									pl.smash_can_charge = False
+									pl.smash_charges    = CHARGE_LIMIT
+									if time() > pl.smash_last_fall_time + 0.2 and time() - pl.smash_start_fall_time > 0.2:
+										pl.smash_last_fall_time = time()
+										pl.smash_on_fall_always()
 								if   pl.smash_anim_state == 1: #walk
 									if pl.world_object.velocity.length() <= 0.25: #measured (max vel for walking)
 										pl.smash_is_charging = False
@@ -253,7 +258,9 @@ def apply_script(pro, con, cfg):
 										pl.smash_is_charging = False
 										pl.smash_killer   = None
 							else:
-								pl.smash_can_charge = True
+								if not pl.smash_can_charge:
+									pl.smash_start_fall_time = time()
+									pl.smash_can_charge = True
 		
 		smash_update_loop_task = None
 		async def smash_update_loop(p):
