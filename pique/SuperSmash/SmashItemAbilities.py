@@ -11,8 +11,9 @@ Authors:
 
 import asyncio
 from math import cos, sin
+from twisted.internet.reactor import callLater
 from pyspades.packet import register_packet_handler
-from pyspades.contained import BlockAction, OrientationData
+from pyspades.contained import BlockAction, OrientationData, GrenadePacket
 from pyspades.constants import BUILD_BLOCK, WEAPON_TOOL, DESTROY_BLOCK
 from pyspades.common import Vertex3
 
@@ -138,22 +139,44 @@ def Earthquake(c, pos = None):
 
 
 #legendary items
+def Aimbot_end(c):
+	p = c.protocol
+	if c in p.smash_aimbot_list:
+		p.smash_aimbot_list.remove(c)
+	c.send_chat("You dont have aimbot anymore!")
 def Aimbot(c, pos = None):
-	c.protocol.smash_aimbot_list.append(c)
+	p = c.protocol
+	p.smash_aimbot_list.append(c)
 	c.send_chat("You received aimbot")
+	callLater(30, Aimbot_end)
+	
 
+def PortalGun_end(c):
+	c.smash_item_portalgun = False
+	c.send_chat("You lost the portal gun!")
 def PortalGun(c, pos = None):
 	c.smash_item_portalgun = True
 	c.send_chat("You received the portal gun. Teleport to a block by shooting at it")
+	def end():
+		c.smash_item_portalgun = False
+	callLater(30, end)
 	#this could "break" some maps. players may get to places they shouldnt, but lets just keep it in for now
 
+def Psychic_end(c):
+	c.smash_item_psychic = False
+	c.send_chat("You r not a psychic anymore!")
 def Psychic(c, pos = None):
 	c.smash_item_psychic = True
 	c.send_chat("You have become a Psychic. Confuse your opponents by shooting at them")
+	callLater(30, Psychic_end(c))
 
+def Stomp_end(c):
+	c.smash_item_stomp = False
+	c.send_chat("You lost the stomp ability!")
 def Stomp(c, pos = None):
 	c.smash_item_stomp = True
 	c.send_chat("You received the stomp ability. When you land u make the ground shake")
+	callLater(30, Stomp_end(c))
 
 #
 def apply_script(pro, con, cfg):
@@ -172,24 +195,21 @@ def apply_script(pro, con, cfg):
 			p = c.protocol
 			
 			if c.smash_item_stomp:
-				c.smash_item_stomp = False
-				c.send_chat("You lost the stomp ability!")
+				Stomp_end(c)
 			
 			if c in p.smash_confused_list:
 				p.smash_confused_list.remove(c)
 				c.smash_item_confused_len = 0
 			
 			if c.smash_item_psychic:
-				c.smash_item_psychic = False
-				c.send_chat("You r not a psychic anymore!")
+				Psychic_end(c)
 			
 			if c.smash_item_eyeforeye:
 				c.smash_item_eyeforeye = False
 				c.send_chat("You lost the AnEyeForAnEye ability!")
 			
 			if c.smash_item_portalgun:
-				c.smash_item_portalgun = False
-				c.send_chat("You lost the portal gun!")
+				PortalGun_end(c)
 			
 			if c.smash_item_poisons:
 				c.smash_item_poisons = False
@@ -198,8 +218,7 @@ def apply_script(pro, con, cfg):
 				c.smash_item_poisoned = False
 		
 			if c in p.smash_aimbot_list:
-				p.smash_aimbot_list.remove(c)
-				c.send_chat("You dont have aimbot anymore!")
+				Aimbot_end(c)
 			
 			if c.smash_item_wall:
 				c.smash_item_wall = False
@@ -260,6 +279,14 @@ def apply_script(pro, con, cfg):
 							aim /= aim.length()
 							pl.smash_apply_dmg(10)
 							pl.smash_apply_knockback(aim)
+				pos = c.world_object.position
+				pos.z += 1
+				nade_pkt = GrenadePacket()
+				nade_pkt.player_id = c.player_id
+				nade_pkt.value     = 0
+				nade_pkt.position  = pos.get()
+				nade_pkt.velocity  = Vertex3().get()
+				p.broadcast_contained(nade_pkt)
 			
 			con.smash_on_fall_always(c)
 	
