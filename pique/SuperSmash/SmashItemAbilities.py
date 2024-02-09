@@ -157,9 +157,7 @@ def PortalGun_end(c):
 def PortalGun(c, pos = None):
 	c.smash_item_portalgun = True
 	c.send_chat("You received the portal gun. Teleport to a block by shooting at it")
-	def end():
-		c.smash_item_portalgun = False
-	callLater(30, end)
+	callLater(30, PortalGun_end)
 	#this could "break" some maps. players may get to places they shouldnt, but lets just keep it in for now
 
 def Psychic_end(c):
