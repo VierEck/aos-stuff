@@ -14,7 +14,7 @@ Authors:
 '''
 
 
-import asyncio
+from asyncio import sleep, ensure_future
 from random import randint
 from time import monotonic as time
 from piqueserver.config import config
@@ -189,7 +189,7 @@ def apply_script(pro, con, cfg):
 		async def smash_powers_loop(p):
 			while True:
 				#wait some time. 
-				await asyncio.sleep(randint(INTEL_APPEAR_TIME_LOWER, INTEL_APPEAR_TIME_UPPER))
+				await sleep(randint(INTEL_APPEAR_TIME_LOWER, INTEL_APPEAR_TIME_UPPER))
 				
 				#now spawn the intel. start the frenzy
 				p.smash_spawn_intel()
@@ -204,11 +204,11 @@ def apply_script(pro, con, cfg):
 						if flag is not None:
 							if flag.z > 61.5:
 								p.smash_spawn_intel(info=False)
-					await asyncio.sleep(1)
+					await sleep(1)
 				
 				if intel_is_capped or p.smash_flag_player is not None:
 					p.smash_flag_player.smash_cap_intel()
-					await asyncio.sleep(POWER_TIME)
+					await sleep(POWER_TIME)
 					if p.smash_flag_player is not None:
 						p.smash_flag_player.smash_ult_end()
 				else:
@@ -222,7 +222,7 @@ def apply_script(pro, con, cfg):
 		
 		def on_map_change(p, map_):
 			if p.smash_powers_loop_task is None:
-				p.smash_powers_loop_task = asyncio.ensure_future(p.smash_powers_loop())
+				p.smash_powers_loop_task = ensure_future(p.smash_powers_loop())
 			return pro.on_map_change(p, map_)
 		
 		def on_map_leave(p):
