@@ -61,7 +61,13 @@ def apply_script(pro, con, cfg):
 		smash_pickup_time     = 0
 		smash_drop_intel_hits = 0
 		
+		def capture_flag(c):
+			return False #prevent actual flag capture
+		
 		def on_flag_take(c):
+			p = c.protocol
+			if not p.smash_intel_spawned:
+				return False
 			c.smash_drop_intel_hits = 3
 			c.smash_pickup_time = time()
 			c.protocol.smash_flag_player = c
@@ -155,11 +161,13 @@ def apply_script(pro, con, cfg):
 	
 	
 	class SmashPowers_P(pro):
+		smash_intel_spawned = False
 	
 		smash_flag_spawns = None
 		def smash_spawn_intel(p, info=True):
 			ext = p.map_info.extensions
 			pos = None
+			p.smash_intel_spawned = True
 			if "Smash_Intel_Spawns" in ext:
 				p.smash_flag_spawns = tuple(ext["Smash_Intel_Spawns"])
 				pos = p.smash_flag_spawns[randint(0, len(p.smash_flag_spawns) - 1)]
@@ -171,6 +179,7 @@ def apply_script(pro, con, cfg):
 				broadcast_warning(p, "The intel has appeared!")
 		
 		def smash_despawn_intel(p):
+			p.smash_intel_spawned = False
 			for flag in (p.team_1.flag, p.team_2.flag):
 				set_intel(flag, (0, 0, 0))
 			broadcast_warning(p, "The intel disappeared...")
