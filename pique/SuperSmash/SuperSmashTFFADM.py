@@ -109,8 +109,6 @@ def apply_script(pro, con, cfg):
 		
 		def on_kill(c, killer, kill_type, nade):
 			p = c.protocol
-			if p.smash_round_end:
-				return False
 			if killer and c != killer:
 				killer.smash_kills += 1
 				c.smash_deaths     += 1
@@ -145,7 +143,7 @@ def apply_script(pro, con, cfg):
 					score_player_list.append(pl)
 						
 				if not pl.team.spectator:
-					#gather everyone in map center
+					#gather everyone at map center
 					pos = x + randint(-5, 5), y + randint(-5, 5), z
 					pl.spawn(pos)
 			
@@ -154,7 +152,7 @@ def apply_script(pro, con, cfg):
 				
 				placement_list = []
 				placement      = 0
-				last_score     = -1234567 #
+				last_score     = -1234567
 				for i in range(0, len(score_player_list)):
 					pl = score_player_list[i]
 					score = pl.smash_get_score()
@@ -211,6 +209,7 @@ def apply_script(pro, con, cfg):
 			p.max_score       = 1
 			p.smash_round_end = False
 			p.friendly_fire   = True
+			p.respawn_waves   = False
 			ext = p.map_info.extensions
 			global PLAYER_TEAM
 			if PLAYER_TEAM is None:
