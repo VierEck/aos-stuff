@@ -6,7 +6,8 @@ Players r all in the same team so they see each other on the map.
 Your companions r spawned on the opposite team to visually distinguish them from enemies.
 
 recommended setting: (since a game lasts the whole duration of map time limit)
-	default_time_limit = 10min
+	default_time_limit = "10min"
+	respawn_time       = "6sec" 
 
 pls include disco.py for disco effect at round end
 
@@ -59,9 +60,10 @@ def smash_get_scores(c, pl):
 def apply_script(pro, con, cfg):
 
 	class SuperSmashTFFADM_C(con):
-		smash_kills    = 0
-		smash_deaths   = 0
-		smash_suicides = 0
+		smash_kills     = 0
+		smash_deaths    = 0
+		smash_suicides  = 0
+		smash_spawn_pos = None
 		
 		def smash_get_score(c):
 			return c.smash_kills - c.smash_deaths - c.smash_suicides
@@ -89,23 +91,32 @@ def apply_script(pro, con, cfg):
 					pass
 			return con.on_spawn(c, pos)
 		
+		def on_spawn_location(c, pos):
+			p = c.protocol
+			if c.smash_spawn_pos is None:
+				x, y, z = p.get_random_location(True)
+				z -= 2
+				return (x, y, z)
+			else:
+				_pos = c.smash_spawn_pos
+				c.smash_spawn_pos = None
+				return _pos
+		
 		def respawn(c):
 			p = c.protocol
 			x, y, z = p.get_random_location(True)
 			z -= 2
-			pos = x, y, z
+			c.smash_spawn_pos = x, y, z
 			t = c.get_respawn_time() - 3
 			def foresee_spawn(c):
 				pos_pkt = PositionData()
-				pos_pkt.x, pos_pkt.y, pos_pkt.z = pos
+				pos_pkt.x, pos_pkt.y, pos_pkt.z = c.smash_spawn_pos
 				c.send_contained(pos_pkt)
 			if t > 0.5:
 				callLater(t, foresee_spawn, c)
 			else:
 				foresee_spawn(c)
-			if c.spawn_call is None:
-				c.spawn_call = callLater(c.get_respawn_time(), c.spawn, pos)
-			#hijack
+			con.respawn(c)
 		
 		def on_kill(c, killer, kill_type, nade):
 			p = c.protocol
