@@ -9,13 +9,18 @@ This is the SuperSmashOff base script. for the full package download following s
 	SmashItems.py          (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashItems.py)
 	SmashItemBuffs.py      (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashItemBuffs.py)
 	SmashItemAbilities.py  (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashItemAbilities.py)
-	SmashItemCompanions.py ()
+	SmashItemCompanions.py (wip)
 
 to set the actual gamemode logic install ONE of the following gamemode scripts:
-	timed kills:
-		SuperSmashTK.py ()
-	timed elimination:
-		SuperSmashTE.py ()
+	FreeForAll Timed DeathMatch:
+		SuperSmashFFATTDM.py (wip)
+	FreeForAll Counted DeathMatch:
+		SuperSmashFFACTDM.py (wip)
+	FreeForAll Ellimination:
+		SuperSmashFFAE.py    (wip)
+	Team Timed DeathMatch:
+		SuperSmashTTDM:      (wip)
+
 
 original SmashOff Gamemode script by Dr.Morphman:
 	https://aloha.pk/t/smashoff/13723/3
@@ -31,7 +36,7 @@ Authors:
 '''
 
 
-import asyncio
+from asyncio import sleep, ensure_future
 from time import monotonic as time
 from typing import Any, Optional, Sequence, Tuple, Union
 from pyspades.constants import (WEAPON_KILL, HEADSHOT_KILL, MELEE_KILL, GRENADE_KILL, 
@@ -266,14 +271,14 @@ def apply_script(pro, con, cfg):
 		async def smash_update_loop(p):
 			while True:
 				p.smash_update()
-				await asyncio.sleep(1/FPS)
+				await sleep(1/FPS)
 		#suggestion: tie position update to world update if config fps == 0 ?
 		
 		def on_map_change(p, map_):
 			p.user_blocks   = set() #prevent ppl from trenching
 			p.fall_damage   = False
 			if FPS != 0 and p.smash_update_loop_task is None:
-				p.smash_update_loop_task = asyncio.ensure_future(p.smash_update_loop())
+				p.smash_update_loop_task = ensure_future(p.smash_update_loop())
 			return pro.on_map_change(p, map_)
 		
 		def on_map_leave(p):
