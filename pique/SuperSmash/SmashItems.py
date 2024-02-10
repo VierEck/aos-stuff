@@ -14,7 +14,7 @@ Authors:
 '''
 
 
-import asyncio
+from asyncio import sleep, ensure_future
 from random import randint, choice
 from piqueserver.config import config
 from pyspades.constants import BUILD_BLOCK, DESTROY_BLOCK
@@ -146,7 +146,7 @@ def apply_script(pro, con, cfg):
 		smash_item_spawn_loop_task = None
 		async def smash_item_spawn_loop(p):
 			while True:
-				await asyncio.sleep(ITEM_SPAWN_RATE)
+				await sleep(ITEM_SPAWN_RATE)
 				p.smash_spawn_item_random()
 	
 		def on_map_change(p, map_):
@@ -168,7 +168,7 @@ def apply_script(pro, con, cfg):
 				ITEM_SPAWN_RATE = ext["item_spawn_rate"]
 				
 			if p.smash_item_spawn_loop_task is None:
-				p.smash_item_spawn_loop_task = asyncio.ensure_future(p.smash_item_spawn_loop())
+				p.smash_item_spawn_loop_task = ensure_future(p.smash_item_spawn_loop())
 			return pro.on_map_change(p, map_)
 		
 		def on_map_leave(p):
