@@ -12,14 +12,14 @@ This is the SuperSmashOff base script. for the full package download following s
 	SmashItemCompanions.py (wip)
 
 to set the actual gamemode logic install ONE of the following gamemode scripts:
-	FreeForAll Timed DeathMatch:
-		SuperSmashFFATTDM.py (wip)
-	FreeForAll Counted DeathMatch:
-		SuperSmashFFACTDM.py (wip)
-	FreeForAll Ellimination:
-		SuperSmashFFAE.py    (wip)
-	Team Timed DeathMatch:
-		SuperSmashTTDM:      (wip)
+	Timed FreeForAll DeathMatch:
+		SuperSmashTFFADM.py (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SuperSmashTFFADM.py)
+	Counted FreeForAll DeathMatch:
+		SuperSmashCFFADM.py (wip)
+	Timed FreeForAll Ellimination:
+		SuperSmashTFFAE.py  (wip)
+	Timed Team DeathMatch:
+		SuperSmashTTDM.py   (wip)
 
 
 original SmashOff Gamemode script by Dr.Morphman:
