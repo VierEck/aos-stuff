@@ -166,7 +166,7 @@ def Psychic_end(c):
 def Psychic(c, pos = None):
 	c.smash_item_psychic = True
 	c.send_chat("You have become a Psychic. Confuse your opponents by shooting at them")
-	callLater(30, Psychic_end(c))
+	callLater(30, Psychic_end, c)
 
 def Stomp_end(c):
 	c.smash_item_stomp = False
@@ -174,7 +174,7 @@ def Stomp_end(c):
 def Stomp(c, pos = None):
 	c.smash_item_stomp = True
 	c.send_chat("You received the stomp ability. When you land u make the ground shake")
-	callLater(30, Stomp_end(c))
+	callLater(30, Stomp_end, c)
 
 #
 def apply_script(pro, con, cfg):
