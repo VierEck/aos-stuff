@@ -25,7 +25,8 @@ from twisted.internet.reactor import callLater
 from pyspades.constants import CTF_MODE
 from piqueserver.config import config
 from piqueserver.commands import command, target_player
-from pyspades.contained import CreatePlayer, IntelCapture, PositionData
+from piqueserver.server import scripts_option
+from pyspades.contained import CreatePlayer, IntelCapture, PositionData, GrenadePacket
 from pyspades.world import Grenade
 from pyspades.common import Vertex3
 
@@ -34,12 +35,17 @@ smash_cfg = config.section("SuperSmashOff")
 PLAYER_TEAM = smash_cfg.option("SSTFFADM_player_team", None).get() #0 == team1/blue; 1 == team2/green
 
 
+def broadcast_chat_status(p, msg):
+	for pl in p.players.values():
+		pl.send_chat("C% " + msg)
+
+
 def print_scores(c):
-	msg = ""
-	msg += " | kills: +"    + str(pl.smash_kills)
-	msg += " | deaths: -"   + str(pl.smash_deaths)
-	msg += " | suicides: -" + str(pl.smash_suicides)
-	msg += " | overall: "   + str(pl.smash_get_score())
+	msg  = ": score = "
+	msg += "+kills(" + str(c.smash_kills) + ") "
+	msg += "-deaths(" + str(c.smash_deaths) + ") "
+	msg += "-suicides(" + str(c.smash_suicides) + ") = "
+	msg += str(c.smash_get_score())
 	return msg
 
 
@@ -128,7 +134,7 @@ def apply_script(pro, con, cfg):
 				score = pl.smash_get_score()
 				
 				did_insert = False
-				for i in range(score_player_list):
+				for i in range(len(score_player_list)):
 					other = score_player_list[i]
 					other_score = other.smash_get_score()
 					if score > other_score:
@@ -158,21 +164,18 @@ def apply_script(pro, con, cfg):
 					placement_list.append(placement)
 				
 				#anounce podium
-				p.broadcast_chat_status(winner.name + " has won!")
-				msg = ""
 				for i in range(min(5, len(score_player_list))):
 					if placement_list[i] > 3:
 						break
 					pl = score_player_list[i]
-					msg += str(placement_list[i]) + ". " + str(pl.name)
-					msg += print_scores(pl) + '\n'
-				p.broadcast_chat(msg)
+					msg  = str(placement_list[i]) + ". " + str(pl.name) 
+					msg += print_scores(pl)
+					p.broadcast_chat(msg)
 				
 				#inform about ur own stats
-				for i in len(score_player_list):
+				for i in range(len(score_player_list)):
 					pl = score_player_list[i]
-					msg = ""
-					msg += str(placement_list[i]) + ". " + str(pl.name)
+					msg  = str(placement_list[i]) + ". " + str(pl.name)
 					msg += print_scores(pl)
 					pl.send_chat(msg)
 				
@@ -180,19 +183,25 @@ def apply_script(pro, con, cfg):
 				intel_pkt = IntelCapture()
 				intel_pkt.player_id = winner.player_id
 				intel_pkt.winning = True
-				self.protocol.broadcast_contained(intel_pkt)
+				p.broadcast_contained(intel_pkt)
+				
+				broadcast_chat_status(p, winner.name + " has won")
+				broadcast_chat_status(p, "with " + str(winner.smash_get_score()) + " points!")
 				
 				#one last bang. fling everyone in random directions
 				vPos = Vertex3(x, y, z + 5)
 				vel  = Vertex3()
 				nade = p.world.create_object(Grenade, 0.0, vPos, None, vel, winner.grenade_exploded)
 				nade_pkt = GrenadePacket()
-				nade_pkt.player_id = c.player_id
+				nade_pkt.player_id = winner.player_id
 				nade_pkt.value     = nade.fuse
 				nade_pkt.position  = vPos.get()
 				nade_pkt.velocity  = vel.get()
 				p.broadcast_contained(nade_pkt)
-			pro.on_game_end(p) #disco
+			script_names = scripts_option.get()
+			if "disco" in script_names or "piqueserver.scripts.disco" in script_names:
+				if not p.disco:
+					p.toggle_disco(False)
 		
 		def _time_up(p):
 			p.on_game_end()
@@ -214,6 +223,11 @@ def apply_script(pro, con, cfg):
 			else:
 				#by default 2, since team_2 on aloha is red and red is cooler than blue
 				PLAYER_TEAM = p.team_2
+			
+			script_names = scripts_option.get()
+			if "disco" in script_names or "piqueserver.scripts.disco" in script_names:
+				if p.disco:
+					p.toggle_disco(False)
 			return pro.on_map_change(p, map_)
 		
 		def get_mode_name(p): #server list
