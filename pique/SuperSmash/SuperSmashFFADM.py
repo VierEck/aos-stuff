@@ -14,6 +14,8 @@ pls include disco.py for disco effect at round end
 based on FreeForAll by Yourself:
 	https://github.com/aloha-pk/piqueserver/blob/master/piqueserver/game_modes/freeforall.py
 
+Special Thanks to Rakete for providing a test server during development!
+
 Authors: 
 	VierEck.
 	Yourself
