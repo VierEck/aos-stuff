@@ -4,6 +4,8 @@ supplementory script for SmashItems.py (and by extension SuperSmash.py)
 Items to give players special abilities
 (i gotta admit that the difference to SmashItemBuffs can be kinda blurry)
 
+Special Thanks to Rakete for providing a test server during development!
+
 Authors:
 	VierEck.
 '''
@@ -148,7 +150,7 @@ def Aimbot(c, pos = None):
 	p = c.protocol
 	p.smash_aimbot_list.append(c)
 	c.send_chat("You received aimbot")
-	callLater(30, Aimbot_end)
+	callLater(30, Aimbot_end, c)
 	
 
 def PortalGun_end(c):
@@ -157,7 +159,7 @@ def PortalGun_end(c):
 def PortalGun(c, pos = None):
 	c.smash_item_portalgun = True
 	c.send_chat("You received the portal gun. Teleport to a block by shooting at it")
-	callLater(30, PortalGun_end)
+	callLater(30, PortalGun_end, c)
 	#this could "break" some maps. players may get to places they shouldnt, but lets just keep it in for now
 
 def Psychic_end(c):
