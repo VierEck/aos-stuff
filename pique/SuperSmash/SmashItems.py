@@ -9,6 +9,8 @@ this is the base items script. to actually add items u need to install following
 
 Inspired by the Christmas Present Item Blocks from Sauerkraut Survival Server (by 1AmYF)
 
+Special Thanks to Rakete for providing a test server during development!
+
 Authors: 
 	VierEck.
 '''
