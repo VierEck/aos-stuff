@@ -38,7 +38,7 @@ ITEM_COLOR_LEGENDARY = (255, 0, 255)
 class BlockItem():
 	def __init__(self, p, col, pos, method):
 		self.pos    = pos
-		self.method = staticmethod(method)
+		self.method = method
 		x, y, z = pos
 		
 		color_pkt = SetColor()
@@ -82,7 +82,7 @@ def apply_script(pro, con, cfg):
 			2: {}, #legendary items
 		}
 		
-		def smash_add_item_to_dict(p, item_type: int, method: staticmethod, name = None): #use this to add items to dict
+		def smash_add_item_to_dict(p, item_type: int, method, name = None): #use this to add items to dict
 			if item_type < 0 or item_type > 2:
 				return
 			if name is None:
