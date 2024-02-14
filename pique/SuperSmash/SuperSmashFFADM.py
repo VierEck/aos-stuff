@@ -156,6 +156,12 @@ def apply_script(pro, con, cfg):
 			p.smash_round_end = True
 			score_player_list = []
 			x, y, z = 256, 256, 0
+			
+			try:
+				p.smash_flag_player.drop_flag()
+			except AttributeError:
+				pass
+			
 			for pl in p.players.values():
 				score = pl.smash_get_score()
 				
@@ -258,7 +264,10 @@ def apply_script(pro, con, cfg):
 			return pro.on_map_change(p, map_)
 		
 		def get_mode_name(p): #server list
-			return "SSFFADM"
+			if DM_MODE == DM_MODE_COUNT:
+				return "SSCFFADM"
+			else:
+				return "SSTFFADM"
 	
 	
 	return SuperSmashFFADM_P, SuperSmashFFADM_C
