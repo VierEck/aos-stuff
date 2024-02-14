@@ -3,6 +3,8 @@ supplementory script for SmashItems.py (and by extension SuperSmash.py)
 
 Items to buff Player Stats
 
+Special Thanks to Rakete for providing a test server during development!
+
 Authors:
 	VierEck.
 '''
