@@ -14,14 +14,10 @@ This is the SuperSmashOff base script. for the full package download following s
 	SmashItemCompanions.py (wip)
 
 to set the actual gamemode logic install ONE of the following gamemode scripts:
-	Timed FreeForAll DeathMatch:
-		SuperSmashTFFADM.py (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SuperSmashTFFADM.py)
-	Counted FreeForAll DeathMatch:
-		SuperSmashCFFADM.py (wip)
-	Timed FreeForAll Ellimination:
-		SuperSmashTFFAE.py  (wip)
-	Timed Team DeathMatch:
-		SuperSmashTTDM.py   (wip)
+	FreeForAll DeathMatch:
+		SuperSmashFFADM.py (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SuperSmashFFADM.py)
+	Team DeathMatch:
+		SuperSmashTDM.py   (wip)
 
 
 original SmashOff Gamemode script by Dr.Morphman:
@@ -30,6 +26,8 @@ smoother knockback animation is achieved thanks to Jipok's charge.py script.
 	https://github.com/piqueserver/piqueserver-extras/blob/master/scripts/charge.py
 damage percentage is achieved thanks to Jipok's max_hp.py script.
 	https://github.com/piqueserver/piqueserver-extras/blob/master/scripts/max_hp.py
+
+Special Thanks to Rakete for providing a test server during development!
 
 Authors: 
 	VierEck.
