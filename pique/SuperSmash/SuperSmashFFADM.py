@@ -1,11 +1,10 @@
 '''
-SuperSmashOff FreeForAll Timed DeathMatch. Gamemode script.
+SuperSmashOff FreeForAll DeathMatch. Gamemode script.
 
-Player with most kills at round end wins.
 Players r all in the same team so they see each other on the map.
 Your companions r spawned on the opposite team to visually distinguish them from enemies.
 
-recommended setting: (since a game lasts the whole duration of map time limit)
+recommended setting:
 	default_time_limit = "10min"
 	respawn_time       = "6sec" 
 
@@ -32,8 +31,21 @@ from pyspades.world import Grenade
 from pyspades.common import Vertex3
 
 
+DM_MODE_TIME, DM_MODE_COUNT = range(2)
+
+
 smash_cfg = config.section("SuperSmashOff")
-PLAYER_TEAM = smash_cfg.option("SSTFFADM_player_team", None).get() #0 == team1/blue; 1 == team2/green
+PLAYER_TEAM     = smash_cfg.option("SSFFADM_player_team"    , None).get() #0 == team1/blue; 1 == team2/green
+DM_MODE         = smash_cfg.option("SSFFADM_mode"           , "time").get() 
+COUNT_MAX_KILLS = smash_cfg.option("SSFFADM_count_max_kills", 100).get()
+if "count" in DM_MODE:
+	#game end on first player to achieve max kills. 
+	#if time limit is reached then game ends like in time mode.
+	DM_MODE = DM_MODE_COUNT 
+else:
+	#time = default mode
+	#game end only on map time limit reached
+	DM_MODE = DM_MODE_TIME
 
 
 def broadcast_chat_status(p, msg):
@@ -50,7 +62,7 @@ def print_scores(c):
 	return msg
 
 
-@command('smash_score')
+@command("smash_score")
 @target_player
 def smash_get_scores(c, pl):
 	pl.send_chat(pl.name + print_scores(pl))
@@ -59,7 +71,7 @@ def smash_get_scores(c, pl):
 #
 def apply_script(pro, con, cfg):
 
-	class SuperSmashTFFADM_C(con):
+	class SuperSmashFFADM_C(con):
 		smash_kills     = 0
 		smash_deaths    = 0
 		smash_suicides  = 0
@@ -128,10 +140,13 @@ def apply_script(pro, con, cfg):
 				killer.best_streak = max(killer.streak, killer.best_streak)
 			else:
 				c.smash_suicides += 1
+			if DM_MODE == DM_MODE_COUNT:
+				if killer.smash_kills >= COUNT_MAX_KILLS:
+					p._time_up()
 			return con.on_kill(c, killer, kill_type, nade)
 	
 	
-	class SuperSmashTFFADM_P(pro):
+	class SuperSmashFFADM_P(pro):
 		game_mode       = CTF_MODE
 		smash_round_end = False
 		
@@ -155,8 +170,8 @@ def apply_script(pro, con, cfg):
 						
 				if not pl.team.spectator:
 					#gather everyone at map center
-					pos = x + randint(-5, 5), y + randint(-5, 5), z
-					pl.spawn(pos)
+					pl.smash_spawn_pos = x + randint(-5, 5), y + randint(-5, 5), z
+					pl.spawn()
 			
 			if len(score_player_list) > 0:
 				winner = score_player_list[0]
@@ -224,7 +239,7 @@ def apply_script(pro, con, cfg):
 			ext = p.map_info.extensions
 			global PLAYER_TEAM
 			if PLAYER_TEAM is None:
-				if "SSTFFADMPlayerTeam" in ext and ext["SSTFFADMPlayerTeam"] == 0:
+				if "SSFFADMPlayerTeam" in ext and ext["SSFFADMPlayerTeam"] == 0:
 					PLAYER_TEAM = p.team_1
 				else:
 					PLAYER_TEAM = p.team_2
@@ -241,7 +256,7 @@ def apply_script(pro, con, cfg):
 			return pro.on_map_change(p, map_)
 		
 		def get_mode_name(p): #server list
-			return "SSTFFADM"
+			return "SSFFADM"
 	
 	
-	return SuperSmashTFFADM_P, SuperSmashTFFADM_C
+	return SuperSmashFFADM_P, SuperSmashFFADM_C
