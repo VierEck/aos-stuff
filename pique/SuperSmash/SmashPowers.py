@@ -9,6 +9,8 @@ Rifle ult: lethal Weapons
 SMG   ult: dmg boost
 Pump  ult: nadelauncher	
 
+Special Thanks to Rakete for providing a test server during development!
+
 Authors: 
 	VierEck.
 '''
@@ -19,7 +21,7 @@ from random import randint
 from time import monotonic as time
 from piqueserver.config import config
 from pyspades.contained import Restock, FogColor
-from pyspades.constants import WEAPON_TOOL, GRENADE_KILL, RIFLE_WEAPON, SMG_WEAPON, SHOTGUN_WEAPON
+from pyspades.constants import WEAPON_KILL, HEADSHOT_KILL, GRENADE_KILL, RIFLE_WEAPON, SMG_WEAPON, SHOTGUN_WEAPON
 from pyspades.common import make_color
 
 smash_cfg = config.section('SuperSmashOff')
@@ -94,7 +96,7 @@ def apply_script(pro, con, cfg):
 			fog_pkt = FogColor()
 			fog_pkt.color = make_color(128, 0, 0)
 			p.broadcast_contained(fog_pkt)
-			if c.weapon_object.id == SHOTGUN_WEAPON: #pump
+			if c.weapon_object.id == SHOTGUN_WEAPON:
 				c.NadeLauncher_give()
 				c.NadeLauncher_set_speed(2.0)
 			broadcast_error(p, c.name + " has unleashed his Ultimate Power")
@@ -115,16 +117,15 @@ def apply_script(pro, con, cfg):
 		
 		def smash_on_hit(c, hit_amount, pl, hit_type, nade):
 			p = c.protocol
+			if p.smash_flag_player is not None and p.smash_flag_player != c and p.smash_flag_player == pl:
+				pl.smash_drop_intel_hits -= 1
+				if pl.smash_drop_intel_hits <= 0:
+					pl.drop_flag()
+				return None
 			if not c.smash_has_ult:
 				return None
-			if p.smash_flag_player is None or p.smash_flag_player != c:
-				if pl == p.smash_flag_player:
-					pl.smash_drop_intel_hits -= 1
-					if pl.smash_drop_intel_hits <= 0:
-						pl.drop_flag()
-				return None
 			
-			if c.weapon_object.id == RIFLE_WEAPON: #rifle
+			if c.weapon_object.id == RIFLE_WEAPON:
 				#lethal bullets in the hands of a good player is overpowered
 				if   hit_type == 0: #body or limb
 					if hit_amount == 49:
@@ -142,15 +143,25 @@ def apply_script(pro, con, cfg):
 					pl.kill(c, hit_type, None)
 				return False
 				
-			elif c.weapon_object.id == SMG_WEAPON: #smg
+			elif c.weapon_object.id == SMG_WEAPON:
 				#couldnt think of anything better, but tbh smgay deserves a boring ult
 				return c.smash_get_dmg(c.weapon_object.id, hit_type, hit_amount) * 3
 				
 			else: #pump
 				#give some love to the shotgun. it needs it.
-				if nade is None and hit_type == GRENADE_KILL:
-					return c.smash_get_dmg(SHOTGUN_WEAPON, GRENADE_KILL, hit_amount) * 2
-				
+				if hit_type in (WEAPON_KILL, HEADSHOT_KILL):
+					return False
+				if c == pl and nade is not None:
+					dmg = c.smash_get_dmg(c.weapon_object.id, hit_type, hit_amount)
+					k   = p.smash_get_DMG_POWER()
+					k  *= 1.0 + (pl.hp + dmg) / (255.0 + p.smash_get_MAX_DAMAGE())
+					aim = pl.world_object.position - nade.position
+					distFactor = (28.0 - aim.length()) / 28.0
+					k   *= distFactor
+					aim /= aim.length()
+					
+					pl.smash_apply_knockback(aim*k)
+					return False
 			return con.smash_on_hit(c, hit_amount, pl, hit_type, nade)
 		
 		def on_kill(c, killer, kill_type, nade):
@@ -202,7 +213,7 @@ def apply_script(pro, con, cfg):
 						break
 					for flag in (p.team_1.flag, p.team_2.flag):
 						if flag is not None:
-							if flag.z > 61.5:
+							if flag.z > 61.5 and flag.x + flag.y > 0.01:
 								p.smash_spawn_intel(info=False)
 					await sleep(1)
 				
