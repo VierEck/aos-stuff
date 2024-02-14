@@ -2,6 +2,8 @@
 Based on the SmashOff gamemode by Dr.Morphman. Knock ur opponents into waters to kill them. 
 This new version has air jumps, smoother knockback animation, Items and Ultimate Powers for each weapon class!
 
+60 ups is highly recommended! Playing on voxlap is not recommended.
+
 This is the SuperSmashOff base script. for the full package download following scripts and setup this hirarchy:
 	SuperSmash.py
 	NadeLauncher.py        (https://github.com/VierEck/aos-stuff/blob/main/pique/NadeLauncher.py)
@@ -48,20 +50,20 @@ from pyspades import world
 
 smash_cfg = config.section("SuperSmashOff")
 
-FPS = smash_cfg.option("FPS", 120).get() #clientside position update rate. for smooth overall gameplay u need higher ups.
+FPS = smash_cfg.option("FPS", 120).get() #position update rate. for smooth overall gameplay u need higher ups.
 
-CHARGE_LIMIT = smash_cfg.option("airjump_amount"  , 3).get()
+CHARGE_LIMIT = smash_cfg.option("airjump_amount"  , 2).get()
 CHARGE_POWER = smash_cfg.option("airjump_power"   , 1).get()
-DMG_POWER    = smash_cfg.option("knockback_power" , 1).get()
+DMG_POWER    = smash_cfg.option("knockback_power" , 1.5).get()
 
 DMG_SPADE = smash_cfg.option("dmg_spade", 20).get()
 DMG_NADE  = smash_cfg.option("dmg_nade" , 30).get() #ranged splash dmg
 
 DMG_VALS = {
 	RIFLE_WEAPON : {   #rifle
-		0: smash_cfg.option("dmg_rifle_head", 15).get(), #head
-		1: smash_cfg.option("dmg_rifle_body", 10).get(), #body
-		2: smash_cfg.option("dmg_rifle_limb",  5).get(), #limb
+		0: smash_cfg.option("dmg_rifle_head", 15).get(),
+		1: smash_cfg.option("dmg_rifle_body", 10).get(),
+		2: smash_cfg.option("dmg_rifle_limb",  5).get(),
 	},
 	SMG_WEAPON : {     #smg
 		0: smash_cfg.option("dmg_smg_head", 3).get(),
