@@ -36,11 +36,14 @@ Authors:
 '''
 
 
+from math import floor
+from itertools import product
 from asyncio import sleep, ensure_future
 from time import monotonic as time
 from typing import Any, Optional, Sequence, Tuple, Union
+from pyspades.contained import BlockAction
 from pyspades.constants import (WEAPON_KILL, HEADSHOT_KILL, MELEE_KILL, GRENADE_KILL, 
-                                RIFLE_WEAPON, SMG_WEAPON, SHOTGUN_WEAPON)
+                                RIFLE_WEAPON, SMG_WEAPON, SHOTGUN_WEAPON, DESTROY_BLOCK)
 from piqueserver.config import config
 from pyspades.contained import SetHP
 from pyspades import world
@@ -136,6 +139,9 @@ def apply_script(pro, con, cfg):
 		def smash_on_hit(c, hit_amount, pl, hit_type, nade):
 			pass
 		
+		def smash_nade_exploded(c, nade):
+			pass
+		
 		
 		def on_spawn(c, pos):
 			c.set_hp(1)
@@ -200,6 +206,42 @@ def apply_script(pro, con, cfg):
 				c.smash_last_pump_time = time()
 			
 			return False #hijack on_hit. we dont want to do actual player damage, but other scripts may break.
+		
+		def grenade_exploded(c, nade): #copy paste from source, slightly modified
+			p = c.protocol
+			if c.name is None or c.team.spectator or (nade.team is not None and nade.team is not c.team):
+				return
+			iface = c.smash_nade_exploded(nade)
+			if iface is False:
+				return
+			pos = nade.position
+			if pos.x < 0 or pos.x > 512 or pos.y < 0 or pos.y > 512 or pos.z < 0 or pos.z > 63:
+				return
+			x = int(floor(pos.x))
+			y = int(floor(pos.y))
+			z = int(floor(pos.z))
+			for pl in p.players.values():
+				if not pl.hp or pl.world_object is None:
+					continue
+				dmg = nade.get_damage(pl.world_object.position)
+				if dmg == 0:
+					continue
+				#c.on_unvalidated_hit(dmg, pl, GRENADE_KILL, nade) #this causes crashes, but why?
+				c.on_hit(dmg, pl, GRENADE_KILL, nade)
+			for n_x, n_y, n_z in product(range(x - 1, x + 2), range(y - 1, y + 2), range(z - 1, z + 2)):
+				if p.map.is_valid_position(n_x, n_y, n_z) and not p.is_indestructable(n_x, n_y, n_z):
+					count = p.map.destroy_point(n_x, n_y, n_z)
+					if count:
+						c.total_blocks_removed += count
+						c.on_block_removed(n_x, n_y, n_z)
+						block_pkt = BlockAction()
+						block_pkt.player_id = c.player_id
+						block_pkt.value = DESTROY_BLOCK
+						block_pkt.x = n_x
+						block_pkt.y = n_y
+						block_pkt.z = n_z
+						p.broadcast_contained(block_pkt, save=True)
+			#hijack. grenade_exploded from source is undesirable
 		
 		def on_walk_update(c, up: bool, down: bool, left: bool, right: bool) -> None:
 			if not (up or down or right or left):
