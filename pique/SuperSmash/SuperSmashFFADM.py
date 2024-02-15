@@ -22,13 +22,15 @@ Authors:
 '''
 
 
+from math import floor
+from itertools import product
 from random import randint
 from twisted.internet.reactor import callLater
-from pyspades.constants import CTF_MODE
+from pyspades.constants import CTF_MODE, GRENADE_KILL, DESTROY_BLOCK
 from piqueserver.config import config
 from piqueserver.commands import command, target_player
 from piqueserver.server import scripts_option
-from pyspades.contained import CreatePlayer, IntelCapture, PositionData, GrenadePacket
+from pyspades.contained import CreatePlayer, IntelCapture, PositionData, GrenadePacket, BlockAction
 from pyspades.world import Grenade
 from pyspades.common import Vertex3
 
@@ -78,6 +80,9 @@ def apply_script(pro, con, cfg):
 		smash_deaths    = 0
 		smash_suicides  = 0
 		smash_spawn_pos = None
+		
+		def smash_nade_exploded(c, nade):
+			pass
 		
 		def smash_get_score(c):
 			return c.smash_kills - c.smash_deaths - c.smash_suicides
@@ -146,6 +151,42 @@ def apply_script(pro, con, cfg):
 				if killer.smash_kills >= COUNT_MAX_KILLS:
 					p._time_up()
 			return con.on_kill(c, killer, kill_type, nade)
+		
+		def grenade_exploded(c, nade): #copy paste from source, slightly modified
+			p = c.protocol
+			if c.name is None or c.team.spectator or (nade.team is not None and nade.team is not c.team):
+				return
+			iface = c.smash_nade_exploded(nade)
+			if iface is False:
+				return
+			pos = nade.position
+			if pos.x < 0 or pos.x > 512 or pos.y < 0 or pos.y > 512 or pos.z < 0 or pos.z > 63:
+				return
+			x = int(floor(pos.x))
+			y = int(floor(pos.y))
+			z = int(floor(pos.z))
+			for pl in p.players.values():
+				if not pl.hp or pl.world_object is None:
+					continue
+				dmg = nade.get_damage(pl.world_object.position)
+				if dmg == 0:
+					continue
+				#c.on_unvalidated_hit(dmg, pl, GRENADE_KILL, nade) #this causes crashes, but why?
+				c.on_hit(dmg, pl, GRENADE_KILL, nade)
+			for n_x, n_y, n_z in product(range(x - 1, x + 2), range(y - 1, y + 2), range(z - 1, z + 2)):
+				if p.map.is_valid_position(n_x, n_y, n_z) and not p.is_indestructable(n_x, n_y, n_z):
+					count = p.map.destroy_point(n_x, n_y, n_z)
+					if count:
+						c.total_blocks_removed += count
+						c.on_block_removed(n_x, n_y, n_z)
+						block_pkt = BlockAction()
+						block_pkt.player_id = c.player_id
+						block_pkt.value = DESTROY_BLOCK
+						block_pkt.x = n_x
+						block_pkt.y = n_y
+						block_pkt.z = n_z
+						p.broadcast_contained(block_pkt, save=True)
+			#hijack. grenade_exploded from source is undesirable
 	
 	
 	class SuperSmashFFADM_P(pro):
