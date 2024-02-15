@@ -176,7 +176,6 @@ def apply_script(pro, con, cfg):
 				dmg = c.smash_get_dmg(c.weapon_object.id, hit_type, hit_amount)
 			
 			pl.smash_killer      = c
-			pl.smash_killer_id   = c.player_id
 			pl.smash_killer_type = hit_type
 			
 			aim = None
