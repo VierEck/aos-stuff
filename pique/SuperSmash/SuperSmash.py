@@ -274,7 +274,7 @@ def apply_script(pro, con, cfg):
 						if not pl.world_object.dead:
 							if pl.smash_is_charging:
 								pl.set_location()
-							if pl.world_object.position.z > 61:
+							if pl.world_object.position.z > 61.5:
 								pl.kill(pl.smash_killer, pl.smash_killer_type, None)
 							elif not pl.world_object.airborne: #on ground
 								if pl.smash_can_charge:
