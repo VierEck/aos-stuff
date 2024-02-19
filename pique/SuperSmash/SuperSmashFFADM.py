@@ -163,23 +163,26 @@ def apply_script(pro, con, cfg):
 				pass
 			
 			for pl in p.players.values():
-				score = pl.smash_get_score()
-				
-				did_insert = False
-				for i in range(len(score_player_list)):
-					other = score_player_list[i]
-					other_score = other.smash_get_score()
-					if score > other_score:
-						score_player_list.insert(i, pl)
-						did_insert = True
-						break
-				if not did_insert:
-					score_player_list.append(pl)
-						
-				if not pl.team.spectator:
-					#gather everyone at map center
-					pl.smash_spawn_pos = x + randint(-5, 5), y + randint(-5, 5), z
-					pl.spawn()
+				try:
+					score = pl.smash_get_score()
+					
+					did_insert = False
+					for i in range(len(score_player_list)):
+						other = score_player_list[i]
+						other_score = other.smash_get_score()
+						if score > other_score:
+							score_player_list.insert(i, pl)
+							did_insert = True
+							break
+					if not did_insert:
+						score_player_list.append(pl)
+							
+					if not pl.team.spectator:
+						#gather everyone at map center
+						pl.smash_spawn_pos = x + randint(-5, 5), y + randint(-5, 5), z
+						pl.spawn()
+				except AttributeError:
+					pass
 			
 			if len(score_player_list) > 0:
 				winner = score_player_list[0]
