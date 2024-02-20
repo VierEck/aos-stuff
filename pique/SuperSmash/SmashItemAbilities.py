@@ -68,11 +68,9 @@ def get_aimbot_target(c):
 	for pl in c.protocol.players.values():
 		if not pl.world_object or pl.world_object.dead or c is pl:
 			continue
-		'''
 		pos_check = pl.world_object.position
-		if not c.can_see(pos_check.x, pos_check.y, pos_check.z): #why does this not work?
+		if not c.world_object.can_see(pos_check.x, pos_check.y, pos_check.z):
 			continue
-		'''
 		aim = c.world_object.orientation
 		origin = c.world_object.position
 		arrow = pl.world_object.position
