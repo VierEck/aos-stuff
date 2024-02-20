@@ -80,7 +80,12 @@ def apply_script(pro, con, cfg):
 		smash_spawn_pos = None
 		
 		def smash_get_score(c):
-			return c.smash_kills - c.smash_deaths - c.smash_suicides
+			score = 0
+			try:
+				score = c.smash_kills - c.smash_deaths - c.smash_suicides
+			except AttributeError:
+				pass
+			return score
 	
 		def on_team_join(c, team):
 			if not team.spectator:
@@ -134,17 +139,20 @@ def apply_script(pro, con, cfg):
 		
 		def on_kill(c, killer, kill_type, nade):
 			p = c.protocol
-			if killer and c != killer:
-				killer.smash_kills += 1
-				c.smash_deaths     += 1
-				
-				killer.streak += 1
-				killer.best_streak = max(killer.streak, killer.best_streak)
-			else:
-				c.smash_suicides += 1
-			if DM_MODE == DM_MODE_COUNT:
-				if killer.smash_kills >= COUNT_MAX_KILLS:
-					p._time_up()
+			try:
+				if killer and c != killer:
+					killer.smash_kills += 1
+					c.smash_deaths     += 1
+					
+					killer.streak += 1
+					killer.best_streak = max(killer.streak, killer.best_streak)
+				else:
+					c.smash_suicides += 1
+				if DM_MODE == DM_MODE_COUNT:
+					if killer.smash_kills >= COUNT_MAX_KILLS:
+						p._time_up()
+			except AttributeError:
+				pass
 			return con.on_kill(c, killer, kill_type, nade)
 	
 	
