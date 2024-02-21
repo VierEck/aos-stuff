@@ -107,7 +107,8 @@ def apply_script(pro, con, cfg):
 		
 		def __init__(b, c, pos, weap, name):
 			p = c.protocol
-			
+
+			b.local = True
 			b.rapid_hack_detect = False
 			b.speedhack_detect = False
 			Shared_C.__init__(b, p, LocalPeer())
