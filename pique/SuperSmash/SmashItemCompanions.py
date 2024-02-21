@@ -159,13 +159,14 @@ def apply_script(pro, con, cfg):
 				b.smash_bot_target = killer
 		
 		def smash_bot_find_target(b):
+			p = b.protocol
 			b.smash_bot_target = None
 			if len(p.players) <= len(p.smash_bot_list):
 				return
 			p = b.protocol
 			dist = 1024
 			for pl in p.players.values():
-				if pl.world_object and not pl.world_object.dead and pl != b and pl != b.smash_bot_friend:
+				if pl.world_object and not pl.world_object.dead and pl not in (b, b.smash_bot_friend):
 					if pl in p.smash_bot_list:
 						if b.smash_bot_friend == pl.smash_bot_friend:
 							continue
