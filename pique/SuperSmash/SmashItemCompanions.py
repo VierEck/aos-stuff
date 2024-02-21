@@ -162,12 +162,12 @@ def apply_script(pro, con, cfg):
 		
 		def smash_bot_find_target(b):
 			b.smash_bot_target = None
-			#if len(p.players) <= len(p.smash_bot_list):
-			#	return
+			if len(p.players) <= len(p.smash_bot_list):
+				return
 			p = b.protocol
 			dist = 1024
 			for pl in p.players.values():
-				if pl.world_object and not pl.world_object.dead and pl != b: #and pl != b.smash_bot_friend:
+				if pl.world_object and not pl.world_object.dead and pl != b and pl != b.smash_bot_friend:
 					if pl in p.smash_bot_list:
 						if b.smash_bot_friend == pl.smash_bot_friend:
 							continue
@@ -462,7 +462,7 @@ def apply_script(pro, con, cfg):
 	#weak items
 	def CompanionZombie(c, pos):
 		p = c.protocol
-		if len(p.connections) < 32:
+		if len(p.players) < 32:
 			b = Zombie(c, pos)
 			def remove():
 				if b is not None:
@@ -473,7 +473,7 @@ def apply_script(pro, con, cfg):
 	#decent items
 	def CompanionDeuce(c, pos):
 		p = c.protocol
-		if len(p.connections) < 32:
+		if len(p.players) < 32:
 			b = Deuce(c, pos)
 			def remove():
 				if b is not None:
@@ -484,21 +484,12 @@ def apply_script(pro, con, cfg):
 	#legendary items
 	def CompanionTopo(c, pos):
 		p = c.protocol
-		if len(p.connections) < 32:
+		if len(p.players) < 32:
 			b = Topo(c, pos)
 			def remove():
 				if b is not None:
 					b.smash_remove_bot()
 			callLater(30, remove)
-	
-	
-	#test debug
-	from piqueserver.commands import command
-	@command("dgbot")
-	def dgbot(c):
-		pos = c.world_object.position
-		CompanionTopo(c, (pos.x, pos.y, pos.z - 2))
-		c.send_chat("debug: bot spawned")
 	
 	
 	#
