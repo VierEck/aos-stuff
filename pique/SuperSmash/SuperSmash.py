@@ -11,7 +11,7 @@ This is the SuperSmashOff base script. for the full package download following s
 	SmashItems.py          (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashItems.py)
 	SmashItemBuffs.py      (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashItemBuffs.py)
 	SmashItemAbilities.py  (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashItemAbilities.py)
-	SmashItemCompanions.py (wip)
+	SmashItemCompanions.py (https://github.com/VierEck/aos-stuff/blob/main/pique/SuperSmash/SmashItemCompanions.py)
 
 to set the actual gamemode logic install ONE of the following gamemode scripts:
 	FreeForAll DeathMatch:
@@ -310,9 +310,10 @@ def apply_script(pro, con, cfg):
 		
 		smash_update_loop_task = None
 		async def smash_update_loop(p):
+			fps = 1/FPS
 			while True:
 				p.smash_update()
-				await sleep(1/FPS)
+				await sleep(fps)
 		#suggestion: tie position update to world update if config fps == 0 ?
 		
 		def on_map_change(p, map_):
