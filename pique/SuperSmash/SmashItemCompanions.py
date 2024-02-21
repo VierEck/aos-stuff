@@ -464,10 +464,10 @@ def apply_script(pro, con, cfg):
 		p = c.protocol
 		if len(p.connections) < 32:
 			b = Zombie(c, pos)
-			def remove(b):
+			def remove():
 				if b is not None:
 					b.smash_remove_bot()
-			callLater(60, remove, b)
+			callLater(60, remove)
 	
 	
 	#decent items
@@ -475,10 +475,10 @@ def apply_script(pro, con, cfg):
 		p = c.protocol
 		if len(p.connections) < 32:
 			b = Deuce(c, pos)
-			def remove(b):
+			def remove():
 				if b is not None:
 					b.smash_remove_bot()
-			callLater(60, remove, b)
+			callLater(60, remove)
 	
 	
 	#legendary items
@@ -486,10 +486,10 @@ def apply_script(pro, con, cfg):
 		p = c.protocol
 		if len(p.connections) < 32:
 			b = Topo(c, pos)
-			def remove(b):
+			def remove():
 				if b is not None:
 					b.smash_remove_bot()
-			callLater(30, remove, b)
+			callLater(30, remove)
 	
 	
 	#test debug
@@ -497,7 +497,7 @@ def apply_script(pro, con, cfg):
 	@command("dgbot")
 	def dgbot(c):
 		pos = c.world_object.position
-		b = Topo(c, (pos.x, pos.y, pos.z - 2))
+		CompanionTopo(c, (pos.x, pos.y, pos.z - 2))
 		c.send_chat("debug: bot spawned")
 	
 	
