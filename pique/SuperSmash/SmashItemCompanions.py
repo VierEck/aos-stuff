@@ -1,8 +1,6 @@
 '''
 supplementory script for SmashItems.py (and by extension SuperSmash.py)
 
-this script makes use of the aimbot feature from SmashItemAbilities.py. Adjust script hirarchy accordingly
-
 Items that spawn companions who aid u. only works if max_players is set below 32.
 its recommended to have at max 24 players, leaving at least 8 more slots for bots.
 
