@@ -33,7 +33,7 @@ def do_limbovl(pl):
 	notification(pl, "you are now using limbovl")
 
 
-@command("limbovl", admin_only=True)
+@command("limbovl", "lovl", admin_only=True)
 def limbovl(c, ip):
 	p = c.protocol
 	ip = ip_address(str(ip))
@@ -46,7 +46,7 @@ def limbovl(c, ip):
 		if ip in p.limbovl_ip_list:
 			p.limbovl_ip_list.remove(ip)
 	callLater(300, remove_ip)
-	notification(c, "ip %s marked for limbovl. you have 5min to connect" % ip)
+	notification(c, "ip %s marked for LimbOVL. you have 5min to connect" % ip)
 
 
 def apply_script(pro, con, cfg):
