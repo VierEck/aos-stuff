@@ -30,7 +30,7 @@ def do_limbovl(pl):
 	create_pkt.team      = -1
 	create_pkt.x, create_pkt.y, create_pkt.z = 256, 256, 0
 	pl.send_contained(create_pkt)
-	notification(pl, "you are now using limbovl")
+	notification(pl, "you are now using LimbOVL")
 
 
 @command("limbovl", "lovl", admin_only=True)
