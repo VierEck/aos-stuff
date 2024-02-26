@@ -31,7 +31,7 @@ def pubovl(c, pl):
 	else:
 		pl.pubovl_start()
 	if c in p.players.values() and c != pl:
-		notification(c, c.name + " has given pubovl to " + pl.name)
+		notification(c, c.name + " has given PubOVL to " + pl.name)
 
 
 def apply_script(pro, con, cfg):
@@ -78,14 +78,14 @@ def apply_script(pro, con, cfg):
 			c.send_contained(create_pkt)
 			
 			c.pubovl_is_active = True
-			notification(c, "you are now using pubovl")
+			notification(c, "you are now using PubOVL")
 		
 		def pubovl_end(c):
 			p = c.protocol
 			
 			c.pubovl_remove_dummy()
 			c.pubovl_is_active = False
-			notification(c, "you are no longer using pubovl")
+			notification(c, "you are no longer using PubOVL")
 			
 			create_pkt = CreatePlayer()
 			create_pkt.player_id = c.player_id
@@ -183,7 +183,7 @@ def apply_script(pro, con, cfg):
 				p = c.protocol
 				c.pubovl_remove_dummy()
 				c.pubovl_is_active = False
-				notification(c, "you are no longer using pubovl")
+				notification(c, "you are no longer using PubOVL")
 			return con.on_team_changed(c, old_team)
 	
 	
