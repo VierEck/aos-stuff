@@ -1,299 +1,225 @@
 '''
-latest version: https://github.com/VierEck/aos-scripts/blob/main/pique/pubovl.py
-LICENSE: GPL-3.0
-codeauthors: VierEck., DryByte (https://github.com/DryByte)
+PubOVL. Secret Spectating.
 
-tricks your client into joining you as a spectator. noone else can see 
-that you r one. now u can spectate cheaters without alerting them of the 
-fact that u r spectating them. have fun. 
 
-scoreboard statistics may get out of sync. Ammo and blocks get out of 
-sync since leaving ovl refills you only client-side. this is not much of 
-a problem though since the server still keeps track of ur correct amount 
-of ammo and blocks. 
-
-/ovl 
-	to become a "hidden spectator". use command again to leave that mode. 
-/ovl <player> 
-	to make someone else become a "hidden spectator". use again to make 
-	the player leave that mode. 
-/exovl <ip address> 
-	use from console or somewhere else. to fake-join as a spectator on ur 
-	side. 
+Authors: 
+	VierEck.
+	DryByte (https://github.com/DryByte)
 '''
 
-from piqueserver.commands import command, target_player
-from pyspades.common import Vertex3, make_color
-from pyspades.constants import WEAPON_TOOL, WEAPON_KILL
-from pyspades import contained as loaders
-from pyspades import world
+
 from piqueserver.scheduler import Scheduler
-from ipaddress import ip_address
+from piqueserver.commands import command, target_player
+from pyspades.contained import CreatePlayer, KillAction, PlayerLeft, WorldUpdate, OrientationData
 
 
-@command('pubovl', 'ovl', admin_only=True)
+def notification(c, msg):
+	p = c.protocol
+	if c in p.players.values():
+		c.send_chat(msg)
+		if "you are" == msg[:7].lower():
+			msg = c.name + " is " + msg[7:]
+	p.irc_say("* " + msg)
+
+
+@command("pubovl", "ovl", admin_only=True)
 @target_player
-def pubovl(connection, player):
-	protocol = connection.protocol
-	player.hidden = not player.hidden
-
-	x, y, z = player.world_object.position.get()
-
-	# full compatibility
-	create_player = loaders.CreatePlayer()
-	create_player.player_id = player.player_id
-	create_player.name = player.name
-	create_player.x = x
-	create_player.y = y
-	create_player.z = z + 2
-	create_player.weapon = player.weapon
-
-	if player.hidden:
-		create_player.team = -1
-
-		player.send_contained(create_player)
-		
-		client = player.client_string.lower()
-		if not "voxlap" in client: #fake deuce does not work in voxlap ;-;
-			player.spawn_deuce()
-			
-		player.send_chat("you are now using pubovl")
-		protocol.irc_say('* %s is using pubovl' % player.name) #let the rest of the staff team know u r using this
+def pubovl(c, pl):
+	p = c.protocol
+	if pl.pubovl_is_active:
+		pl.pubovl_end()
 	else:
-		create_player.team = player.team.id
+		pl.pubovl_start()
+	if c in p.players.values() and c != pl:
+		notification(c, c.name + " has given pubovl to " + pl.name)
 
-		set_color = loaders.SetColor()
-		set_color.player_id = player.player_id
-		set_color.value = make_color(*player.color)
-		
-		player.send_contained(create_player, player)
-		
-		if player.deuce_spawned:
-			player.delete_deuce()
-		
-		if player.world_object.dead:                              #without this u could run around even though u r supposed to be
-			schedule = Scheduler(player.protocol)                 #dead. this could be abused for cheats so we dont allow this. 
-			schedule.call_later(0.1, player.spawn_dead_after_ovl) #need call_later cause otherwise u die as spectator which means u
-		else:                                                     #dont die at all. 
-			player.fix_ori = player.protocol.world_time + 0.5
-			
-		player.send_chat('you are no longer using pubovl')
-		protocol.irc_say('* %s is no longer using pubovl' % player.name)
-		
 
-@command('externalovl', 'exovl', admin_only=True) #external~outside: "outside the game". player is connected but not joined to the game
-def exovl(connection, ip):                        #                  yet. in this state, since he neither appears on scoreboard nor yet
-	protocol = connection.protocol                #                  spawned, he is completely invisible to everyone like he didnt exist. 
-	ip_command = ip_address(str(ip))
-	for player in protocol.connections.values():
-		ip_player = ip_address(player.address[0])
-		if player.name is None and ip_player == ip_command:
-			x = 256 # spawn them in the middle of the map instead of the left upper corner. 
-			y = 256
-			z = 0
-			create_player = loaders.CreatePlayer()
-			create_player.player_id = player.player_id
-			create_player.name = "external Deuce" #server doesnt know ur name yet, dont worry, when u rly join u get ur actual name back. 
-			create_player.x = x
-			create_player.y = y
-			create_player.z = z
-			create_player.weapon = 0
-			create_player.team = -1
-			player.send_contained(create_player)
-			player.send_chat("you are now using externalovl")
-			protocol.irc_say('*%s is using externalovl' % ip)
+def apply_script(pro, con, cfg):
 
-def apply_script(protocol, connection, config):
-	class pubovlProtocol(protocol):
-		deuce_id = 0
+
+	class pubovl_C(con):
+		pubovl_is_active     = False
+		pubovl_dummy_spawned = False
+		pubovl_fix_ori       = 0
 		
-	class pubovlConnection(connection):
-		hidden = False
-		deuce_spawned = False
-		fix_ori = 0
-		
-		def is_server_full(self):
-			if len(self.protocol.players) >= 32:
-				return True
-			else:
-				return False
-				
-		def delete_deuce(self):
-			deuce_left = loaders.PlayerLeft()
-			deuce_left.player_id = self.protocol.deuce_id
-			self.send_contained(deuce_left, self)
-			self.deuce_spawned = False
-		
-		def spawn_deuce(self):
-			x, y, z = self.world_object.position.get()
-			create_deuce = loaders.CreatePlayer()
-			create_deuce.player_id = self.protocol.deuce_id
-			create_deuce.name = self.name
-			create_deuce.team = self.team.id
-			create_deuce.x = x
-			create_deuce.y = y
-			create_deuce.z = z
-			create_deuce.weapon = self.weapon
-			self.send_contained(create_deuce)
-			self.deuce_spawned = True
-			schedule = Scheduler(self.protocol)
-			schedule.call_later(0.1, self.deuce_ups)
-		
-		def deuce_ups(self):
-			self.protocol.players[self.protocol.deuce_id] = self
-			items = []
-			highest_player_id = max(self.protocol.players)
-			for i in range(highest_player_id+1):
-				position = orientation = None
-				try:
-					player = self.protocol.players[i]
-					if (not player.filter_visibility_data and
-							not player.team.spectator):
-						world_object = player.world_object
-						position = world_object.position.get()
-						orientation = world_object.orientation.get()
-				except (KeyError, TypeError, AttributeError):
-					pass
-				if position is None:
-					position = (0.0, 0.0, 0.0)
-					orientation = (0.0, 0.0, 0.0)
-				items.append((position, orientation))
-			world_update = loaders.WorldUpdate()
-			world_update.items = items[:highest_player_id+1]
-			del self.protocol.players[self.protocol.deuce_id]
-			self.send_contained(world_update)
-		
-		def spawn_dead_after_ovl(self):
-			kill_action = loaders.KillAction()
-			kill_action.killer_id = self.player_id
-			kill_action.player_id = self.player_id
-			kill_action.kill_type = 2
-			kill_action.respawn_time = self.get_respawn_time() #not actual spawn time, maybe fix this later. 
-			self.send_contained(kill_action)
-			
-		def on_orientation_update(self, x, y, z):
-			if self.fix_ori > self.protocol.world_time:
-				a, b, c = self.world_object.orientation.get()
-				send_ori = loaders.OrientationData()
-				send_ori.x = a
-				send_ori.y = b
-				send_ori.z = c
-				self.send_contained(send_ori)
-				return False
-			return connection.on_orientation_update(self, x, y, z)
-		
-		def kill(self, by=None, kill_type=WEAPON_KILL, grenade=None):
-			if self.hp is None:
-				return
-			if self.on_kill(by, kill_type, grenade) is False:
-				return
-			self.drop_flag()
-			self.hp = None
-			self.weapon_object.reset()
-			kill_action = loaders.KillAction()
-			kill_action.kill_type = kill_type
-			if by is None:
-				kill_action.killer_id = kill_action.player_id = self.player_id
-			else:
-				kill_action.killer_id = by.player_id
-				kill_action.player_id = self.player_id
-			if by is not None and by is not self:
-				by.add_score(1)
-			kill_action.respawn_time = self.get_respawn_time() + 1
-			
-			if self.hidden: 
-				self.protocol.broadcast_contained(kill_action, sender=self, save=True) 
-				if self.deuce_spawned:
-					deuce_id = self.protocol.deuce_id
-					if by is None:
-						kill_action.killer_id = kill_action.player_id = deuce_id
+		def send_contained(c, pkt, sequence = False):
+			p = c.protocol
+			if c.pubovl_is_active:
+				if pkt.id in (CreatePlayer.id, KillAction.id) and pkt.player_id == c.player_id:
+					if c.pubovl_dummy_spawned:
+						pkt.player_id = p.pubovl_dummy_id
 					else:
-						kill_action.killer_id = by.player_id
-						kill_action.player_id = deuce_id
-					self.send_contained(kill_action)
-				if by is not None:
-					self.send_chat('[pubovl]: you were killed by %s' % by.name)
-			else:
-				 self.protocol.broadcast_contained(kill_action, save=True)   
-			self.world_object.dead = True
-			self.respawn()
-
-			return connection.kill(self, by, kill_type, grenade)
+						return #hijack
+			elif pkt.id == CreatePlayer.id:
+				if c.player_id == p.pubovl_dummy_id or p.pubovl_dummy_id > 31:
+					p.pubovl_update_dummy()
+			return con.send_contained(c, pkt, sequence)
+		
+		def on_orientation_update(c, x, y, z):
+			p = c.protocol
+			if c.pubovl_fix_ori > p.world_time:
+				ori_pkt = OrientationData()
+				ori_pkt.x, ori_pkt.y, ori_pkt.z = c.world_object.orientation.get()
+				c.send_contained(ori_pkt)
+				return False
+			return con.on_orientation_update(c, x, y, z)
+		
+		def pubovl_start(c):
+			p = c.protocol
+			c.pubovl_spawn_dummy()
 			
-		def spawn(self, pos=None):
-			self.spawn_call = None
-			if self.team is None:
+			create_pkt = CreatePlayer()
+			create_pkt.player_id = c.player_id
+			create_pkt.name      = c.name
+			create_pkt.team      = -1
+			create_pkt.weapon    = c.weapon
+			create_pkt.x, create_pkt.y, create_pkt.z = c.world_object.position.get()
+			create_pkt.z += 2
+			c.send_contained(create_pkt)
+			
+			c.pubovl_is_active = True
+			notification(c, "you are now using pubovl")
+		
+		def pubovl_end(c):
+			p = c.protocol
+			
+			c.pubovl_remove_dummy()
+			c.pubovl_is_active = False
+			notification(c, "you are no longer using pubovl")
+			
+			create_pkt = CreatePlayer()
+			create_pkt.player_id = c.player_id
+			create_pkt.name      = c.name
+			create_pkt.team      = c.team.id
+			create_pkt.weapon    = c.weapon
+			create_pkt.x, create_pkt.y, create_pkt.z = c.world_object.position.get()
+			create_pkt.z += 2
+			c.send_contained(create_pkt)
+			
+			if c.world_object.dead:
+				def send_dead():
+					if c and not c.disconnected:
+						kill_pkt = KillAction()
+						kill_pkt.killer_id = kill_pkt.player_id = c.player_id
+						kill_pkt.kill_type    = 2
+						kill_pkt.respawn_time = c.get_respawn_time() #fixme: incorrect respawn time
+						c.send_contained(kill_pkt)
+				sched = Scheduler(p)
+				sched.call_later(0.1, send_dead)
+			else:
+				c.pubovl_fix_ori = p.world_time + 0.5
+		
+		def pubovl_spawn_dummy(c):
+			if c.pubovl_dummy_spawned:
 				return
-			spectator = self.team.spectator
-			create_player = loaders.CreatePlayer()
-			if not spectator:
-				if pos is None:
-					x, y, z = self.get_spawn_location()
-					x += 0.5
-					y += 0.5
-					z -= 2.4
-				else:
-					x, y, z = pos
-				returned = self.on_spawn_location((x, y, z))
-				if returned is not None:
-					x, y, z = returned
-				if self.world_object is not None:
-					self.world_object.set_position(x, y, z, True)
-				else:
-					position = Vertex3(x, y, z)
-					self.world_object = self.protocol.world.create_object(
-						world.Character, position, None, self._on_fall)
-				self.world_object.dead = False
-				self.tool = WEAPON_TOOL
-				self.refill(True)
-				create_player.x = x
-				create_player.y = y
-				create_player.z = z
-				create_player.weapon = self.weapon
-			create_player.player_id = self.player_id
-			create_player.name = self.name
-			create_player.team = self.team.id
-			if self.filter_visibility_data and not spectator:
-				self.send_contained(create_player)
-			else:
-				if self.hidden: 
-					self.protocol.broadcast_contained(create_player, sender=self,save=True)
-					if self.deuce_spawned:
-						create_player.player_id = self.protocol.deuce_id
-						self.send_contained(create_player)
-				else:
-					self.protocol.broadcast_contained(create_player, save=True)
-			if not spectator:
-				self.on_spawn((x, y, z))
-
-			if not self.client_info:
-				handshake_init = loaders.HandShakeInit()
-				self.send_contained(handshake_init)
-				
-			if self.player_id == self.protocol.deuce_id:
-				if self.deuce_spawned:
-					for players in self.protocol.players.values():
-						if players.hidden:
-							players.delete_deuce()
-						
-				self.protocol.deuce_id = self.protocol.player_ids.pop()
-				self.protocol.player_ids.put_back(self.protocol.deuce_id)
-				
-				if self.deuce_spawned:
-					for players in self.protocol.players.values():
-						if players.hidden:
-							players.spawn_deuce()
-
-			if not self.hidden:
-				return connection.spawn(self, pos)
-
-		def on_team_changed(self, old_team):                    #normally server rejects ur teamchange when ur in ovl cause
-			if self.hidden:	                                    #teamid dont align. however if an admin force switches u the
-				self.send_chat('you are no longer using pubovl')#script looses track of wether u r using ovl or not. 
-				self.hidden = False	                            #idk why i cant irc relay this. 
-				if self.deuce_spawned:
-					self.delete_deuce()
-
-			return connection.on_team_changed(self, old_team)
+			clin_str = c.client_string.lower()
+			if "voxlap" in clin_str:
+				return #dummy doesnt work in voxlap
+			p = c.protocol
+			p.pubovl_update_dummy()
+			if p.pubovl_dummy_id > 31:
+				if "betterspades" not in clin_str or "iv of spades" not in clin_str:
+					return #only betterspades and iv of spades are (>32) compatible as of now :/
 			
-	return pubovlProtocol, pubovlConnection
+			create_pkt = CreatePlayer()
+			create_pkt.player_id = p.pubovl_dummy_id
+			create_pkt.name      = c.name
+			create_pkt.team      = c.team.id
+			create_pkt.weapon    = c.weapon
+			create_pkt.x, create_pkt.y, create_pkt.z = c.world_object.position.get()
+			c.send_contained(create_pkt)
+			
+			c.pubovl_dummy_spawned = True
+			
+			def send_dummy_dead():
+				if c and not c.disconnected:
+					kill_pkt = KillAction()
+					kill_pkt.killer_id = kill_pkt.player_id = p.pubovl_dummy_id
+					kill_pkt.kill_type    = 2
+					kill_pkt.respawn_time = c.get_respawn_time() #fixme: incorrect respawn time
+					c.send_contained(kill_pkt)
+			
+			def send_dummy_ori():
+				if c and not c.disconnected:
+					p.players[p.pubovl_dummy_id] = c
+					items = []
+					highest_player_id = max(p.players)
+					for i in range(highest_player_id + 1):
+						pos = ori = None
+						try:
+							pl = p.players[i]
+							if (not pl.filter_visibility_data and not pl.team.spectator):
+								pos = pl.world_object.position.get()
+								ori = pl.world_object.orientation.get()
+						except (KeyError, TypeError, AttributeError):
+							pass
+						if pos is None:
+							pos = (0.0, 0.0, 0.0)
+							ori = (0.0, 0.0, 0.0)
+						items.append((pos, ori))
+					ups_pkt = WorldUpdate()
+					ups_pkt.items = items[:highest_player_id+1]
+					del p.players[p.pubovl_dummy_id]
+					c.send_contained(ups_pkt)
+			
+			sched = Scheduler(p)
+			if c.world_object.dead:
+				sched.call_later(0.1, send_dummy_dead)
+			else:
+				sched.call_later(0.1, send_dummy_ori)
+		
+		def pubovl_remove_dummy(c):
+			if not c.pubovl_dummy_spawned:
+				return
+			p = c.protocol
+			c.pubovl_dummy_spawned = False
+			
+			left_pkt = PlayerLeft()
+			left_pkt.player_id = p.pubovl_dummy_id
+			c.send_contained(left_pkt)
+		
+		def on_team_changed(c, old_team): #take forced team switch into account
+			if c.pubovl_is_active:
+				p = c.protocol
+				c.pubovl_remove_dummy()
+				c.pubovl_is_active = False
+				notification(c, "you are no longer using pubovl")
+			return con.on_team_changed(c, old_team)
+	
+	
+	class pubovl_P(pro):
+		pubovl_dummy_id  = 0
+		
+		def broadcast_contained(p, pkt, unsequenced=False, sender=None, team=None, save=False, rule=None):
+			if pkt.id in (CreatePlayer.id, KillAction.id):
+				pl = p.players[pkt.player_id]
+				if pl.pubovl_is_active:
+					pkt.player_id = p.pubovl_dummy_id
+					pl.send_contained(pkt)
+					sender = pl
+				elif pkt.id == CreatePlayer.id:
+					if pl.player_id == p.pubovl_dummy_id or p.pubovl_dummy_id > 31:
+						p.pubovl_update_dummy()
+			return pro.broadcast_contained(p, pkt, unsequenced, sender, team, save, rule)
+		
+		def pubovl_update_dummy(p):
+			new_id = 0
+			for pl in p.connections.values():
+				if pl.player_id is not None and new_id == pl.player_id:
+					new_id += 1
+			if new_id != p.pubovl_dummy_id:
+				for pl in p.connections.values():
+					if pl.pubovl_is_active:
+						pl.pubovl_remove_dummy()
+				p.pubovl_dummy_id = new_id
+				for pl in p.connections.values():
+					if pl.pubovl_is_active:
+						pl.pubovl_spawn_dummy()
+		
+		def on_map_leave(p):
+			for pl in p.connections.values():
+				pl.pubovl_is_active = pl.pubovl_dummy_spawned = False
+			return pro.on_map_leave(p)
+	
+	
+	return pubovl_P, pubovl_C
