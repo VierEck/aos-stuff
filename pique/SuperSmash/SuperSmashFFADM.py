@@ -2,7 +2,6 @@
 SuperSmashOff FreeForAll DeathMatch. Gamemode script.
 
 Players r all in the same team so they see each other on the map.
-Your companions r spawned on the opposite team to visually distinguish them from enemies.
 
 recommended setting:
 	default_time_limit = "10min"
@@ -91,24 +90,6 @@ def apply_script(pro, con, cfg):
 			if not team.spectator:
 				return PLAYER_TEAM
 			return con.on_team_join(c, team)
-		
-		def on_spawn(c, pos):
-			if c.local:
-				b = c
-				try:
-					bot_team = b.smash_bot_friend.team.other
-					
-					create_pkt = CreatePlayer()
-					create_pkt.x, create_pkt.y, create_pkt.z = pos
-					create_pkt.weapon    = b.weapon
-					create_pkt.player_id = b.player_id
-					create_pkt.name      = b.name
-					create_pkt.team      = bot_team.id
-					
-					b.smash_bot_friend.send_contained(create_pkt)
-				except AttributeError:
-					pass
-			return con.on_spawn(c, pos)
 		
 		def on_spawn_location(c, pos):
 			p = c.protocol
