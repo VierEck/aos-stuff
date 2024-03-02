@@ -1,5 +1,5 @@
 '''
-Extension packet for higher client position update rate. 
+packet-less extension for higher client position update rate. 
 
 
 Authors: 
@@ -7,91 +7,96 @@ Authors:
 '''
 
 
-from math import isnan, isinf
 from time import monotonic as time
-from piqueserver.config import config
+from twisted.internet.reactor import callLater
 from pyspades.packet import register_packet_handler
-from pyspades.contained import ProtocolExtensionInfo, VersionResponse, PositionData
+from pyspades.contained import PositionData
 from pyspades.constants import MAX_POSITION_RATE
-
-
-POSUPGRADE_EXT_ID  = 102 #hopefully this one isnt already taken
-POSUPGRADE_EXT_VER = 1
-POSUPGRADE_EXT = POSUPGRADE_EXT_ID, POSUPGRADE_EXT_VER
-
-
-posext_cfg = config.section("PositionUpgrade")
-#lets say u host a private server with friends. 
-#u trust everyone so u dont need speedhack detection
-TRUST = posext_cfg.option("trust", False).get()
+from pyspades.player import check_nan
 
 
 def notification(c, msg):
 	p = c.protocol
 	p.irc_say(msg)
-
-
-def check_nan(*vals) -> bool: 
-	#copy paste from aloha source
-	#suggestion: check_nan needs an interface. how about putting it in protocol?
-    for val in vals:
-        if isnan(val) or isinf(val):
-            return True
-    return False
+	print(msg)
 
 
 def apply_script(pro, con, cfg):
 
 
 	class PosUpgrade_C(con):
-		PosUpgrade_supports             = False
-		PosUpgrade_last_pos_update_old  = 0
+		PosUpgrade_supports          = False
+		PosUpgrade_detect            = None
+		PosUpgrade_last_pos_time     = 0
+		PosUpgrade_last_src_pos_time = 0
+		
+		def on_join(c):
+			#indicate gameproperty to client via chat
+			c.send_chat("This server supports the PosUpgrade extension")
+			return con.on_join(c)
+		
+		def on_spawn(c, pos):
+			if not c.local and not c.PosUpgrade_supports and c.PosUpgrade_detect is None:
+				c.PosUpgrade_detect = 60
+				def evaluate_detection():
+					if c.PosUpgrade_detect < 1:
+						c.PosUpgrade_supports = True
+						notification(c, c.name + " supports PosUpgrade")
+					else:
+						if c.team.spectator:
+							#player somehow ends up in spectator before detection ended.
+							#so try to detect him again when he changes team.
+							c.PosUpgrade_detect = None
+						else:
+							c.PosUpgrade_detect = False
+							#if detection fails but client actually does support it, send indication
+							#so that client stops sending pos at higher rate for their own good
+							c.send_chat("PosUpgrade extension could not be detected.")
+				callLater(3, evaluate_detection)
+			return con.on_spawn(c, pos)
 		
 		def posupgrade_on_position_update(c):
 			#source interface only fires every second and most scripts account for that.
-			#to not disturb the existing relationship, this additional interface is needed.
+			#to not disturb the existing relationship, this additional interface is introduced.
 			pass 
 		
+		def posupgrade_on_position_unvalidated(c, pos):
+			pass
+		
 		def posupgrade_check_speedhack(c, x, y, z):
-			if TRUST:
+			if not c.speedhack_detect:
 				return True
-			#TODO: check speedhack
+			#TODO: check speedhack lmao
 			return True
 		
 		@register_packet_handler(PositionData)
 		def on_position_update_recieved(c, pkt):
 			if not c.PosUpgrade_supports:
+				if c.PosUpgrade_detect:
+					if c.PosUpgrade_last_pos_time + MAX_POSITION_RATE > time():
+						if time() - c.PosUpgrade_last_pos_time < 1/29: 
+							c.PosUpgrade_detect -= 1
+					c.PosUpgrade_last_pos_time = time()
 				return con.on_position_update_recieved(c, pkt)
 			#hijack
-			if c.PosUpgrade_last_pos_update_old + MAX_POSITION_RATE < time():
-				c.PosUpgrade_last_pos_update_old = time()
-				#handles intel/tent stuff and on_position_update()
-				con.on_position_update_recieved(c, pkt)
-			else:
-				x, y, z = pkt.x, pkt.y, pkt.z
-				if check_nan(x, y, z):
-					c.on_hack_attempt('Invalid position data received')
-					return
-				if not c.posupgrade_check_speedhack(x, y, z):
-					return
-				if not c.freeze_animation: #when is freeze animation ever used?
-					c.world_object.set_position(x, y, z)
-					c.posupgrade_on_position_update()
-		
-		@register_packet_handler(VersionResponse)
-		def on_version_info_recieved(c, pkt):
-			if not (pkt.client == 'o' and pkt.version <= (0, 1, 3)):
-				ext_pkt = ProtocolExtensionInfo()
-				ext_pkt.extensions = [ POSUPGRADE_EXT ]
-				c.send_contained(ext_pkt)
-			return con.on_version_info_recieved(c, pkt)
-		
-		@register_packet_handler(ProtocolExtensionInfo)
-		def on_ext_info_received(c, pkt):
-			if POSUPGRADE_EXT in pkt.extensions:
-				c.PosUpgrade_supports = True
-				notification(c, c.name + " supports Position Upgrade Extension")
-			return con.on_ext_info_received(c, pkt)
+			if c.PosUpgrade_last_src_pos_time + MAX_POSITION_RATE < time():
+				c.PosUpgrade_last_src_pos_time = time()
+				return con.on_position_update_recieved(c, pkt)
+			if not c.hp or c.team.spectator or not c.world_object:
+				return
+			x, y, z = pkt.x, pkt.y, pkt.z
+			if check_nan(x, y, z):
+				c.on_hack_attempt('Invalid position data received')
+				return
+			if c.posupgrade_on_position_unvalidated((x, y, z)) is False:
+				return
+			if not c.posupgrade_check_speedhack(x, y, z):
+				c.set_location()
+				return
+			if not c.freeze_animation:
+				c.world_object.set_position(x, y, z)
+				c.posupgrade_on_position_update()
+			c.PosUpgrade_last_pos_time = time()
 	
 	
 	return pro, PosUpgrade_C
