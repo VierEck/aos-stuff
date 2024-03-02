@@ -49,7 +49,7 @@ def PosUpgrade_manual_check(c):
 	print("test")
 	if not c.PosUpgrade_supports:
 		notification(c, c.name + " performs manual PosUpgrade check...")
-		c.send_chat("performing manual PosUpgrade check...")
+		c.send_chat("This server supports the PosUpgrade extension")
 		PosUpgrade_check(c)
 
 
