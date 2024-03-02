@@ -265,6 +265,14 @@ def apply_script(pro, con, cfg):
 			c.smash_last_sneak = sneak
 			return con.on_animation_update(c, jump, crouch, sneak, sprint)
 	
+		def posupgrade_on_position_unvalidated(c, pos):
+			if c.smash_is_charging:
+				return False
+			try:
+				return con.posupgrade_on_position_unvalidated(c, pos)
+			except AttributeError:
+				pass
+	
 	
 	class SuperSmash_P(pro):
 	
