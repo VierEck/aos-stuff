@@ -9,6 +9,7 @@ Authors:
 
 from time import monotonic as time
 from twisted.internet.reactor import callLater
+from piqueserver.commands import command
 from pyspades.packet import register_packet_handler
 from pyspades.contained import PositionData
 from pyspades.constants import MAX_POSITION_RATE
@@ -22,6 +23,34 @@ def notification(c, msg):
 	p = c.protocol
 	p.irc_say(msg)
 	print(msg)
+
+
+def PosUpgrade_check(c):
+	c.PosUpgrade_detect = 60
+	def evaluate_detection():
+		if c.PosUpgrade_detect < 1:
+			c.PosUpgrade_supports = True
+			notification(c, c.name + " supports PosUpgrade")
+		else:
+			if c.team.spectator:
+				#player somehow ends up in spectator before detection ended.
+				#so try to detect him again when he changes team.
+				c.PosUpgrade_detect = None
+			else:
+				c.PosUpgrade_detect = False
+				#if detection fails but client actually does support it, send indication
+				#so that client stops sending pos at higher rate for their own good
+				c.send_chat("PosUpgrade extension could not be detected")
+	callLater(3, evaluate_detection)
+
+
+@command("posupgrade")
+def PosUpgrade_manual_check(c):
+	print("test")
+	if not c.PosUpgrade_supports:
+		notification(c, c.name + " performs manual PosUpgrade check...")
+		c.send_chat("performing manual PosUpgrade check...")
+		PosUpgrade_check(c)
 
 
 def apply_script(pro, con, cfg):
@@ -40,22 +69,7 @@ def apply_script(pro, con, cfg):
 		
 		def on_spawn(c, pos):
 			if not c.local and not c.PosUpgrade_supports and c.PosUpgrade_detect is None:
-				c.PosUpgrade_detect = 60
-				def evaluate_detection():
-					if c.PosUpgrade_detect < 1:
-						c.PosUpgrade_supports = True
-						notification(c, c.name + " supports PosUpgrade")
-					else:
-						if c.team.spectator:
-							#player somehow ends up in spectator before detection ended.
-							#so try to detect him again when he changes team.
-							c.PosUpgrade_detect = None
-						else:
-							c.PosUpgrade_detect = False
-							#if detection fails but client actually does support it, send indication
-							#so that client stops sending pos at higher rate for their own good
-							c.send_chat("PosUpgrade extension could not be detected.")
-				callLater(3, evaluate_detection)
+				PosUpgrade_check(c)
 			return con.on_spawn(c, pos)
 		
 		def posupgrade_on_position_update(c):
