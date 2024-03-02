@@ -15,6 +15,9 @@ from pyspades.constants import MAX_POSITION_RATE
 from pyspades.player import check_nan
 
 
+MIN_POS_RATE = 1/29
+
+
 def notification(c, msg):
 	p = c.protocol
 	p.irc_say(msg)
@@ -74,7 +77,7 @@ def apply_script(pro, con, cfg):
 			if not c.PosUpgrade_supports:
 				if c.PosUpgrade_detect:
 					if c.PosUpgrade_last_pos_time + MAX_POSITION_RATE > time():
-						if time() - c.PosUpgrade_last_pos_time < 1/29: 
+						if time() - c.PosUpgrade_last_pos_time < MIN_POS_RATE: 
 							c.PosUpgrade_detect -= 1
 					c.PosUpgrade_last_pos_time = time()
 				return con.on_position_update_recieved(c, pkt)
