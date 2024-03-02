@@ -85,8 +85,7 @@ def apply_script(pro, con, cfg):
 		def posupgrade_check_speedhack(c, x, y, z):
 			if not c.speedhack_detect:
 				return True
-			#TODO: check speedhack lmao
-			return True
+			return c.check_speedhack(x, y, z) #i cant come up with anything else, better than nothing tho
 		
 		@register_packet_handler(PositionData)
 		def on_position_update_recieved(c, pkt):
