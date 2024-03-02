@@ -191,7 +191,7 @@ def apply_script(pro, con, cfg):
 				aim = c.world_object.orientation
 				if c.weapon_object.id == SHOTGUN_WEAPON and time() < c.smash_last_pump_time + 0.1:
 					#each pellet in a shot add to one big knockback
-					k += pl.world_object.velocity.length() - 1 - pl.hp / 255.0
+					k += 1 / pl.world_object.velocity.length()
 			else:
 				aim = pl.world_object.position - nade.position
 				distFactor = (28.0 - aim.length()) / 28.0 #max nade dmg distance roughly 28 blocks
