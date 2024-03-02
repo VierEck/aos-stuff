@@ -17,6 +17,8 @@ from pyspades.player import check_nan
 
 
 MIN_POS_RATE = 1/29
+CHAT_INDICATOR_SUPPORT = "This server supports the PosUpgrade extension"
+CHAT_INDICATOR_FAIL    = "PosUpgrade extension could not be detected"
 
 
 def notification(c, msg):
@@ -40,7 +42,7 @@ def PosUpgrade_check(c):
 				c.PosUpgrade_detect = False
 				#if detection fails but client actually does support it, send indication
 				#so that client stops sending pos at higher rate for their own good
-				c.send_chat("PosUpgrade extension could not be detected")
+				c.send_chat(CHAT_INDICATOR_FAIL)
 	callLater(3, evaluate_detection)
 
 
@@ -49,7 +51,7 @@ def PosUpgrade_manual_check(c):
 	print("test")
 	if not c.PosUpgrade_supports:
 		notification(c, c.name + " performs manual PosUpgrade check...")
-		c.send_chat("This server supports the PosUpgrade extension")
+		c.send_chat(CHAT_INDICATOR_SUPPORT)
 		PosUpgrade_check(c)
 
 
@@ -64,7 +66,7 @@ def apply_script(pro, con, cfg):
 		
 		def on_join(c):
 			#indicate gameproperty to client via chat
-			c.send_chat("This server supports the PosUpgrade extension")
+			c.send_chat(CHAT_INDICATOR_SUPPORT)
 			return con.on_join(c)
 		
 		def on_spawn(c, pos):
