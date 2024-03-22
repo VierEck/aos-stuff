@@ -34,6 +34,11 @@ def p_mute(c, pl):
 	c.MutePlayer_muted.append(pl)
 	return pl.name + " muted."
 
+@command("unmuteall")
+def unmuteall(c):
+	c.MutePlayer_muted = []
+	return "unmuted everyone"
+
 
 def apply_script(pro, con, cfg):
 	
