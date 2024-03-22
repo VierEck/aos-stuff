@@ -2,8 +2,8 @@
 Command to not receive messages from a specific player. 
 the message from that player is still sent to everyone else, just not to you.
 
-This script is to be put high on the script hirarchie, above all
-other scripts that overwrite on_chat or on_chat_message_recieved.
+This script is to be put high on the script hirarchie, 
+above all other scripts that overwrite on_chat.
 
 Authors:
 	VierEck.
@@ -18,12 +18,16 @@ from pyspades.constants import CHAT_ALL, CHAT_TEAM
 @command("playermute", "pmute") #having the player/p part first might make typos less likely i think?
 @target_player                  #staff should be careful nonetheless to not confuse this with /mute
 def p_mute(c, pl):
-	p = c.protocol
 	if c is pl:
-		#this may be a small concern, since it could be easy to misclick and send the 
-		#command without args and unmute everyone without it being your intention. 
-		c.MutePlayer_muted = []
-		return "#Everyone unmuted"
+		if len(c.MutePlayer_muted) <= 0:
+			return "noone is muted by you"
+		msg = "players you muted:\n"
+		for plr in c.MutePlayer_muted:
+			msg += "[#" + str(plr.player_id)
+			if plr.name is not None:
+				msg += ": " + plr.name
+			msg += "], "
+		return msg
 	if pl in c.MutePlayer_muted:
 		c.MutePlayer_muted.remove(pl)
 		return pl.name + " unmuted"
@@ -35,7 +39,10 @@ def apply_script(pro, con, cfg):
 	
 	
 	class MutePlayer_C(con):
-		MutePlayer_muted = []
+		
+		def __init__(c, *arg, **kw):
+			con.__init__(c, *arg, **kw)
+			c.MutePlayer_muted = []
 		
 		def on_chat(c, msg, is_global):
 			#copy paste latter half of on_chat_message_recieved from source. modified
