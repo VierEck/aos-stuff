@@ -48,7 +48,6 @@ def PosUpgrade_check(c):
 
 @command("posupgrade")
 def PosUpgrade_manual_check(c):
-	print("test")
 	if not c.PosUpgrade_supports:
 		notification(c, c.name + " performs manual PosUpgrade check...")
 		c.send_chat(CHAT_INDICATOR_SUPPORT)
