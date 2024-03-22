@@ -15,8 +15,8 @@ from pyspades.contained import ChatMessage
 from pyspades.constants import CHAT_ALL, CHAT_TEAM
 
 
-@command("playermute", "pmute") #having the player/p part first might make typos less likely i think?
-@target_player                  #staff should be careful nonetheless to not confuse this with /mute
+@command("muteplayer", "mutep")
+@target_player
 def p_mute(c, pl):
 	if c is pl:
 		if len(c.MutePlayer_muted) <= 0:
