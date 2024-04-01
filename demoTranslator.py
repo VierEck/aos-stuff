@@ -1,5 +1,6 @@
 '''
-Translate a demo into a readable text file.
+Translate a demo into humanly readable information.
+
 
 based on aos_replay by BR
 	https://github.com/BR-/aos_replay
@@ -15,6 +16,7 @@ from struct import unpack, calcsize
 
 AOS_PROTOCOL_VER = 3 #0.75
 AOS_REPLAY_VER   = 1
+TRANSLATOR_VER   = 0
 
 TOOL_IDs  = { 0: "spade", 1: "block", 2: "weap" , 3: "nade", }
 WEAP_IDs  = { 0: "semi" , 1: "smg"  , 2: "pump" , }
@@ -23,19 +25,19 @@ KILL_IDs  = { 0: "body" , 1: "head" , 2: "melee", 3: "nade", 4: "fall", 5: "team
 
 players    = {}
 packets    = {}
-pkt_filter = [ 2, 3, 4]
-#recommended to filter worldupdate, inputdata and weapondata due to sheer amount of these in a demo.
+pkt_filter = [ 2, 3, 4, ]
+#recommended to filter worldupdate, inputdata and weapondata due to sheer amount of these packets in a demo.
 
 
 def PositionData(data):
 	x, y, z = unpack("fff", data[0:12])
-	return ("00/PositionData: (pos: " 
+	return ("00/PositionData: (" 
 		+ "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")")
 packets[0] = PositionData
 
 def OrientationData(data):
 	x, y, z = unpack("fff", data[0:12])
-	return ("01/OrientationData: (ori: " 
+	return ("01/OrientationData: (" 
 		+ "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")")
 packets[1] = OrientationData
 
@@ -49,7 +51,7 @@ def WorldUpdate(data):
 		j += 1
 		for val in [x, y, z, a, b, c]:
 			if val != 0:
-				info += str(j)
+				info += "(" + str(j) + ")"
 				info += "(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")"
 				info += "(ori: " + "{:5.2f}".format(a) + ", " + "{:5.2f}".format(b) + ", " + "{:5.2f}".format(c) + "); "
 				break;
@@ -131,7 +133,7 @@ packets[8] = SetColor
 
 def ExistingPlayer(data):
 	pl_id = data[0]
-	decode_name = data[11:-1].decode()
+	decode_name = data[11:-1].decode("cp437")
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
@@ -160,7 +162,7 @@ packets[11] = MoveObject
 
 def CreatePlayer(data):
 	pl_id = data[0]
-	decode_name = data[15:-1].decode()
+	decode_name = data[15:-1].decode("cp437")
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
@@ -193,9 +195,57 @@ def BlockLine(data):
 		+ ")(end: " + "{:5.2f}".format(a) + ", " + "{:5.2f}".format(b) + ", " + "{:5.2f}".format(c) + ")")
 packets[14] = BlockLine
 
+def CTFState(data):
+	info = ""
+	if data[3] & 0b00000001:
+		pl_id = data[4]
+		pl_name = ""
+		if pl_id in players:
+			pl_name = ": " + players[pl_id]
+		info += "(player1: " + str(pl_id) + pl_name + ")"
+	else:
+		x, y, z = unpack("fff", data[4:16])
+		info += "(pos1: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")"
+	if data[3] & 0b00000010:
+		pl_id = data[16]
+		pl_name = ""
+		if pl_id in players:
+			pl_name = ": " + players[pl_id]
+		info += "(player2: " + str(pl_id) + pl_name + ")"
+	else:
+		x, y, z = unpack("fff", data[16:28])
+		info += "(pos2: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")"
+	x1, y1, z1, x2, y2, z2 = unpack("ffffff", data[28:52])
+	return ("(score1: " + str(data[0]) + ")(score2: " + str(data[1]) + ")(limit: " + str(data[2]) + info
+		+ "(base1: " + "{:5.2f}".format(x1) + ", " + "{:5.2f}".format(y1) + ", " + "{:5.2f}".format(z1) 
+		+ ")(base2: " + "{:5.2f}".format(x2) + ", " + "{:5.2f}".format(y2) + ", " + "{:5.2f}".format(z2) + ")")
+
+def TCState(data):
+	info = ""
+	i = 1
+	while i < len(data):
+		x, y, z = unpack("fff", data[i:i+12])
+		info += "(team: " + str(data[i+12]) + ")"
+		info += "(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + "); "
+		i += 13
+	return "(terrs: " + str(data[0]) + "): " + info + ")"
+
+GAME_STATEs = { 0: CTFState, 1: TCState, }
+
 def StateData(data):
-	#TODO
-	return "15/StateData: "
+	pl_id = data[0]
+	pl_name = ""
+	if pl_id in players:
+		pl_name = ": " + players[pl_id]
+	game_mode = "ctf"
+	if data[30] > 0:
+		game_mode = "tc"
+	return ("15/StateData: (" + str(pl_id) + pl_name
+		+ ")(fog: " + str(data[3]) + ", " + str(data[2]) + ", " +  str(data[1])
+		+ ")(team1: " + str(data[6]) + ", " + str(data[5]) + ", " +  str(data[4])
+		+ ")(team2: " + str(data[9]) + ", " + str(data[8]) + ", " +  str(data[7])
+		+ ")(team1: " + data[10:20].decode("cp437") + ")(team2: " + data[20:30].decode("cp437")
+		+ ")(mode: " + game_mode + ")" + GAME_STATEs[data[30]](data[31:]))
 packets[15] = StateData
 
 def KillAction(data):
@@ -220,7 +270,7 @@ def ChatMessage(data):
 		messenger = players[pl_id]
 	if data[1] == 1:
 		chat_type = "team"
-	return "17/ChatMessage: (" + chat_type + ", " + messenger + ": " + data[2:-1].decode() + ")"
+	return "17/ChatMessage: (" + chat_type + ", " + messenger + ": " + data[2:-1].decode("cp437") + ")"
 packets[17] = ChatMessage
 
 def MapStart(data):
@@ -298,7 +348,7 @@ packets[26] = Restock
 
 def FogColor(data):
 	return ("27/FogColor: " 
-		+ ")(color: " + str(data[3]) + ", " + str(data[2]) + ", " + str(data[1]) + str(data[0]) + ")")
+		+ ")(fog: " + str(data[3]) + ", " + str(data[2]) + ", " + str(data[1]) + str(data[0]) + ")")
 packets[27] = FogColor
 
 def WeaponReload(data):
@@ -343,18 +393,22 @@ def VersionResponse(data):
 	minor   = unpack("b", data[2])
 	rev1    = unpack("b", data[3])
 	rev2    = unpack("b", data[4])
-	os_info = data[5:].decode()
-	return ("34/VersionResponse: (client: " + data[0].decode()
+	os_info = data[5:].decode("cp437")
+	return ("34/VersionResponse: (client: " + data[0].decode("cp437")
 		+ ")(ver: " + str(major) + "." + str(minor) + "." + str(rev1) + str(rev2) + ")(os: " + os_info + ")")
 packets[34] = VersionResponse
 
 
 def translate(file_name):
 	with open(file_name, "rb") as of:
-		of.read(2)
-		#if unpack("B", of.read(1)) != AOS_REPLAY_VER or unpack("B", of.read(1)) != AOS_PROTOCOL_VER:
-		#	return False
+		if of.read(1)[0] != AOS_REPLAY_VER:
+			return -1
+		if of.read(1)[0] != AOS_PROTOCOL_VER:
+			return -2
 		with open(file_name + ".txt", "w") as nf:
+			nf.write("demo translator version: " + str(TRANSLATOR_VER) + "\n")
+			nf.write("aos_replay version: " + str(AOS_REPLAY_VER) + "\n")
+			nf.write("aos protocol version: " + str(AOS_PROTOCOL_VER) + "\n")
 			time = 0
 			while True:
 				fmt = "fH"
@@ -375,17 +429,21 @@ def translate(file_name):
 				nf.write("\n")
 			nf.close()
 		of.close()
+	return 0
 
 if __name__ == "__main__":
 	from os import path
 	from argparse import ArgumentParser
 	
-	parser = ArgumentParser(description="Translate a demo into a readable text file and vice versa.")
-	parser.add_argument("file", help="File to read")
+	parser = ArgumentParser(description="Translate a demo into text")
+	parser.add_argument("file", help="File to read from")
 	args = parser.parse_args()
 	
 	if path.exists(args.file):
-		if translate(args.file) is False:
-			print("wrong aos_replay version or wrong aos protocol version")
+		t = translate(args.file)
+		if t < -1:
+			print("wrong aos protocol version")
+		elif t < 0:
+			print("wrong aos_replay version")
 	else:
 		print("no such file exists")
