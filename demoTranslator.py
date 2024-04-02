@@ -31,13 +31,13 @@ pkt_filter = [ 2, 3, 4, ]
 
 def PositionData(data):
 	x, y, z = unpack("fff", data[0:12])
-	return ("00/PositionData: (" 
+	return ("00/PositionData     : (" 
 		+ "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")")
 packets[0] = PositionData
 
 def OrientationData(data):
 	x, y, z = unpack("fff", data[0:12])
-	return ("01/OrientationData: (" 
+	return ("01/OrientationData  : (" 
 		+ "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")")
 packets[1] = OrientationData
 
@@ -55,7 +55,7 @@ def WorldUpdate(data):
 				info += "(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")"
 				info += "(ori: " + "{:5.2f}".format(a) + ", " + "{:5.2f}".format(b) + ", " + "{:5.2f}".format(c) + "); "
 				break;
-	return "02/WorldUpdate: " + info
+	return "02/WorldUpdate      : " + info
 packets[2] = WorldUpdate
 
 def InputData(data):
@@ -80,7 +80,7 @@ def InputData(data):
 		inp_info += "sneak "
 	if data[1] & 0b10000000:
 		inp_info += "sprint "
-	return "03/InputData: (" + pl_info + ")( " + inp_info + ")"
+	return "03/InputData        : (" + pl_info + ")( " + inp_info + ")"
 packets[3] = InputData
 
 def WeaponInput(data):
@@ -93,13 +93,13 @@ def WeaponInput(data):
 		weap_info += "pri "
 	if data[1] & 0b00000010:
 		weap_info += "sec "
-	return "04/WeaponInput: (" + pl_info + ")( " + weap_info + ")"
+	return "04/WeaponInput      : (" + pl_info + ")( " + weap_info + ")"
 packets[4] = WeaponInput
 
 def SetHp(data):
-	hp, type_, x, y, z = unpack("BBfff", data[0:14])
-	sType = "fall" if not type_ else "weap"
-	return ("05/SetHp: (hp: " + str(hp) + ")(type: " + sType
+	x, y, z = unpack("fff", data[2:14])
+	info_Type = "fall" if not data[1] else "weap"
+	return ("05/SetHp            : (hp: " + str(data[0]) + ")(type: " + info_Type
 		+ ")(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")")
 packets[5] = SetHp
 
@@ -109,7 +109,7 @@ def GrenadePacket(data):
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
 	fuse, x, y, z, a, b, c = unpack("fffffff", data[1:29])
-	return ("06/GrenadePacket: (" + str(pl_id) + pl_name + ")(fuse: " + str(fuse) 
+	return ("06/GrenadePacket    : (" + str(pl_id) + pl_name + ")(fuse: " + str(fuse) 
 		+ ")(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) 
 		+ ")(vel: " + "{:5.2f}".format(a) + ", " + "{:5.2f}".format(b) + ", " + "{:5.2f}".format(c) + ")")
 packets[6] = GrenadePacket
@@ -119,7 +119,7 @@ def SetTool(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return "07/SetTool: (" + str(pl_id) + pl_name + ")(tool: " + TOOL_IDs[data[1]] + ")"
+	return "07/SetTool          : (" + str(pl_id) + pl_name + ")(tool: " + TOOL_IDs[data[1]] + ")"
 packets[7] = SetTool
 
 def SetColor(data):
@@ -127,21 +127,21 @@ def SetColor(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return ("08/SetColor: (" + str(pl_id) + pl_name 
+	return ("08/SetColor         : (" + str(pl_id) + pl_name 
 		+ ")(color: " + str(data[3]) + ", " + str(data[2]) + ", " + str(data[1]) + ")")
 packets[8] = SetColor	
 
 def ExistingPlayer(data):
 	pl_id = data[0]
-	decode_name = data[11:-1].decode("cp437")
+	decode_name = data[11:-1].decode("cp437", "replace")
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
 	players[pl_id] = decode_name
-	kills = unpack("B", data[4:8])
-	return ("09/ExistingPlayer: (" + str(pl_id) + pl_name + ")(team: " + str(data[1]) 
+	kills = unpack("I", data[4:8])
+	return ("09/ExistingPlayer   : (" + str(pl_id) + pl_name + ")(team: " + str(data[1]) 
 		+ ")(weap: " + WEAP_IDs[data[2]] + ")(tool: " + TOOL_IDs[data[3]] + ")(kills: " + str(kills)
-		+ ")(color: " + str[data[8]] + ", " + str[data[9]] + ", " + str[data[10]] + ")"
+		+ ")(color: " + str(data[8]) + ", " + str(data[9]) + ", " + str(data[10]) + ")"
 		+ "(name: " + decode_name + ")")
 packets[9] = ExistingPlayer
 
@@ -150,25 +150,25 @@ def ShortPlayer(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return ("10/ShortPlayer: (" + str(pl_id) + pl_name 
+	return ("10/ShortPlayer      : (" + str(pl_id) + pl_name 
 		+ ")(team: " + str(data[1]) + ")(weap: " + WEAP_IDs[data[2]] + ")")
 packets[10] = ShortPlayer
 
 def MoveObject(data):
 	x, y, z = unpack("fff", data[2:14])
-	return ("11/MoveObject: (obj: " + str(data[0]) + ")(team: " + str(data[1]) 
+	return ("11/MoveObject       : (obj: " + str(data[0]) + ")(team: " + str(data[1]) 
 		+ ")(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")")
 packets[11] = MoveObject
 
 def CreatePlayer(data):
 	pl_id = data[0]
-	decode_name = data[15:-1].decode("cp437")
+	decode_name = data[15:-1].decode("cp437", "replace")
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
 	players[pl_id] = decode_name
 	x, y, z = unpack("fff", data[3:15])
-	return ("12/CreatePlayer: (" + str(pl_id) + pl_name 
+	return ("12/CreatePlayer     : (" + str(pl_id) + pl_name 
 		+ ")(weap: " + WEAP_IDs[data[1]] + ")(team: " + str(data[2])
 		+ ")(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z)
 		+ ")(name: " + decode_name + ")")
@@ -179,9 +179,9 @@ def BlockAction(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	x, y, z = unpack("fff", data[2:14])
-	return ("13/BlockAction: (" + str(pl_id) + pl_name + ")(action: " + BLOCK_IDs[data[1]]
-		+ ")(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")")
+	x, y, z = unpack("III", data[2:14])
+	return ("13/BlockAction      : (" + str(pl_id) + pl_name + ")(action: " + BLOCK_IDs[data[1]]
+		+ ")(pos: " + str(x) + ", " + str(y) + ", " + str(z) + ")")
 packets[13] = BlockAction
 
 def BlockLine(data):
@@ -189,10 +189,10 @@ def BlockLine(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	x, y, z, a, b, c = unpack("ffffff", data[1:25])
-	return ("14/BlockLine: (" + str(pl_id) + pl_name
-		+ ")(start: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) 
-		+ ")(end: " + "{:5.2f}".format(a) + ", " + "{:5.2f}".format(b) + ", " + "{:5.2f}".format(c) + ")")
+	x, y, z, a, b, c = unpack("IIIIII", data[1:25])
+	return ("14/BlockLine        : (" + str(pl_id) + pl_name
+		+ ")(start: " + str(x) + ", " + str(y) + ", " + str(z) 
+		+ ")(end: " + str(a) + ", " + str(b) + ", " + str(c) + ")")
 packets[14] = BlockLine
 
 def CTFState(data):
@@ -240,11 +240,11 @@ def StateData(data):
 	game_mode = "ctf"
 	if data[30] > 0:
 		game_mode = "tc"
-	return ("15/StateData: (" + str(pl_id) + pl_name
+	return ("15/StateData        : (" + str(pl_id) + pl_name
 		+ ")(fog: " + str(data[3]) + ", " + str(data[2]) + ", " +  str(data[1])
 		+ ")(team1: " + str(data[6]) + ", " + str(data[5]) + ", " +  str(data[4])
 		+ ")(team2: " + str(data[9]) + ", " + str(data[8]) + ", " +  str(data[7])
-		+ ")(team1: " + data[10:20].decode("cp437") + ")(team2: " + data[20:30].decode("cp437")
+		+ ")(team1: " + data[10:20].decode("cp437", "replace") + ")(team2: " + data[20:30].decode("cp437", "replace")
 		+ ")(mode: " + game_mode + ")" + GAME_STATEs[data[30]](data[31:]))
 packets[15] = StateData
 
@@ -257,9 +257,8 @@ def KillAction(data):
 	killer_name = ""
 	if killer_id in players:
 		killer_name = ": " + players[killer_id]
-	respawn_time = unpack("f", data[3:7])
-	return ("16/KillAction: (victim: " + str(victim_id) + victim_name + ")(killer: " + str(killer_id) + killer_name 
-		+ ")(type: " + KILL_IDs[data[2]] + ")(respawn: " + str(respawn_time) + ")")
+	return ("16/KillAction       : (victim: " + str(victim_id) + victim_name + ")(killer: " + str(killer_id) + killer_name 
+		+ ")(type: " + KILL_IDs[data[2]] + ")(respawn: " + str(data[3]) + ")")
 packets[16] = KillAction
 
 def ChatMessage(data):
@@ -270,16 +269,16 @@ def ChatMessage(data):
 		messenger = players[pl_id]
 	if data[1] == 1:
 		chat_type = "team"
-	return "17/ChatMessage: (" + chat_type + ", " + messenger + ": " + data[2:-1].decode("cp437") + ")"
+	return "17/ChatMessage      : (" + chat_type + ", " + messenger + ": " + data[2:-1].decode("cp437", "replace") + ")"
 packets[17] = ChatMessage
 
 def MapStart(data):
 	size = unpack("I", data)
-	return "18/MapStart: (size: " + str(size[0]) + ")"
+	return "18/MapStart         : (size: " + str(size[0]) + ")"
 packets[18] = MapStart
 
 def MapChunk(data):
-	return "19/MapChunk: (size: " + str(len(data)) + ")"
+	return "19/MapChunk         : (size: " + str(len(data)) + ")"
 packets[19] = MapChunk
 
 def PlayerLeft(data):
@@ -288,7 +287,7 @@ def PlayerLeft(data):
 	if pl_id in players:
 		pl_info = "(" + str(pl_id) + ": " + players[pl_id] + ")"
 		del players[pl_id]
-	return "20/PlayerLeft: " + pl_info
+	return "20/PlayerLeft       : " + pl_info
 packets[20] = PlayerLeft
 
 def TerritoryCapture(data):
@@ -299,13 +298,13 @@ def TerritoryCapture(data):
 	win = "win"
 	if data[2] < 1:
 		win = "lose"
-	return ("20/TerritoryCapture: (" + str(pl_id) + pl_name 
+	return ("20/TerritoryCapture : (" + str(pl_id) + pl_name 
 		+ ")(obj: " + str(data[1]) + ")(" + win + ")(team: " + str(data[3]) + ")")
 packets[21] = TerritoryCapture
 
 def ProgressBar(data):
 	rate, progress = unpack("bf", data[2:7])
-	return ("21/ProgressBar: (obj: " + str(data[0]) + ")(team: " + str(data[1]) 
+	return ("21/ProgressBar      : (obj: " + str(data[0]) + ")(team: " + str(data[1]) 
 		+ ")(rate: " + str(rate) + ")(progress: " + "{:5.2f}".format(progress * 100) + "%)")
 packets[22] = ProgressBar
 
@@ -315,9 +314,9 @@ def IntelCapture(data):
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
 	win = "win"
-	if data[2] < 1:
+	if data[1] < 1:
 		win = "lose"
-	return "23/IntelCapture: (" + str(pl_id) + pl_name + ")(" + win + ")"
+	return "23/IntelCapture     : (" + str(pl_id) + pl_name + ")(" + win + ")"
 packets[23] = IntelCapture
 
 def IntelPickup(data):
@@ -325,7 +324,7 @@ def IntelPickup(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return "24/IntelPickup: (" + str(pl_id) + pl_name + ")"
+	return "24/IntelPickup      : (" + str(pl_id) + pl_name + ")"
 packets[24] = IntelPickup
 
 def IntelDrop(data):
@@ -334,7 +333,7 @@ def IntelDrop(data):
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
 	x, y, z = unpack("fff", data[1:13])
-	return ("25/IntelDrop: (" + str(pl_id) + pl_name 
+	return ("25/IntelDrop        : (" + str(pl_id) + pl_name 
 		+ ")(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")")
 packets[25] = IntelDrop
 
@@ -343,11 +342,11 @@ def Restock(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return "26/Restock: (" + str(pl_id) + pl_name + ")"
+	return "26/Restock          : (" + str(pl_id) + pl_name + ")"
 packets[26] = Restock
 
 def FogColor(data):
-	return ("27/FogColor: " 
+	return ("27/FogColor         : " 
 		+ ")(fog: " + str(data[3]) + ", " + str(data[2]) + ", " + str(data[1]) + str(data[0]) + ")")
 packets[27] = FogColor
 
@@ -356,7 +355,7 @@ def WeaponReload(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return ("28/WeaponReload: (" + str(pl_id) + pl_name 
+	return ("28/WeaponReload     : (" + str(pl_id) + pl_name 
 		+ ")(mag: " + str(data[1]) + ")(reserve: " + str(data[2]) + ")")
 packets[28] = WeaponReload
 
@@ -365,7 +364,7 @@ def ChangeTeam(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return "28/ChangeTeam: (" + str(pl_id) + pl_name + ")(team: " + str(data[1]) + ")"
+	return "28/ChangeTeam       : (" + str(pl_id) + pl_name + ")(team: " + str(data[1]) + ")"
 packets[29] = ChangeTeam
 
 def ChangeWeapon(data):
@@ -373,7 +372,7 @@ def ChangeWeapon(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return "29/ChangeWeapon: (" + str(pl_id) + pl_name + ")(weap: " + WEAP_IDs[data[1]] + ")"
+	return "29/ChangeWeapon     : (" + str(pl_id) + pl_name + ")(weap: " + WEAP_IDs[data[1]] + ")"
 packets[30] = ChangeWeapon
 
 def HandshakeInit(data):
@@ -393,8 +392,8 @@ def VersionResponse(data):
 	minor   = unpack("b", data[2])
 	rev1    = unpack("b", data[3])
 	rev2    = unpack("b", data[4])
-	os_info = data[5:].decode("cp437")
-	return ("34/VersionResponse: (client: " + data[0].decode("cp437")
+	os_info = data[5:].decode("cp437", "replace")
+	return ("34/VersionResponse  : (client: " + data[0].decode("cp437", "replace")
 		+ ")(ver: " + str(major) + "." + str(minor) + "." + str(rev1) + str(rev2) + ")(os: " + os_info + ")")
 packets[34] = VersionResponse
 
@@ -405,10 +404,10 @@ def translate(file_name):
 			return -1
 		if of.read(1)[0] != AOS_PROTOCOL_VER:
 			return -2
-		with open(file_name + ".txt", "w") as nf:
+		with open(file_name + ".txt", "w", encoding="cp437") as nf:
 			nf.write("demo translator version: " + str(TRANSLATOR_VER) + "\n")
-			nf.write("aos_replay version: " + str(AOS_REPLAY_VER) + "\n")
-			nf.write("aos protocol version: " + str(AOS_PROTOCOL_VER) + "\n")
+			nf.write("aos_replay version     : " + str(AOS_REPLAY_VER) + "\n")
+			nf.write("aos protocol version   : " + str(AOS_PROTOCOL_VER) + "\n")
 			time = 0
 			while True:
 				fmt = "fH"
@@ -423,10 +422,11 @@ def translate(file_name):
 				pkt_id = data[0]
 				if pkt_id in pkt_filter:
 					continue
-				nf.write("{:015.4f}".format(time) + ": ")
+				nf.write("[" + "{:015.4f}".format(time))
 				if pkt_id in packets:
-					nf.write("[" + packets[pkt_id](data[1:]) + "]")
-				nf.write("\n")
+					#print("pkt: " + str(pkt_id)) #dbg
+					nf.write(": " + packets[pkt_id](data[1:]))
+				nf.write("]\n")
 			nf.close()
 		of.close()
 	return 0
