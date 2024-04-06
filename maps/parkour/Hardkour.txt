@@ -4,10 +4,10 @@ author = "VierEck."
 description = ("A short but hard challenge.")
 
 extensions = {
-    "water_damage" : 100,
-    "parkour_start" : (192, 256, 48),
-    "parkour_end" : (320, 256, 48),
-    "parkour_checkpoints" : [(208, 256, 48), (221, 256, 48), (237, 256, 48), (256, 256, 50), (269, 256, 49), (287, 256, 51)]
+	"water_damage" : 100,
+	"parkour_start" : (192, 256, 48),
+	"parkour_end" : (320, 256, 48),
+	"parkour_checkpoints" : [(208, 256, 48), (221, 256, 48), (237, 256, 48), (256, 256, 50), (269, 256, 49), (287, 256, 51)]
 }
 
 fog = (0, 0, 0)
