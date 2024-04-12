@@ -66,6 +66,7 @@ def cmd_reset(c, gesture=None):
 			c.parkour_reset_gesture = GRENADE_TOOL
 		else:
 			return "Invalid gesture name. Pls try one of these: spade, block, weapon, grenade"
+		return "Set gesture to " + gesture
 
 
 def apply_script(pro, con, cfg):
