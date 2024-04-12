@@ -11,7 +11,8 @@ website, not here.
 based on parkour.py by 1AmYF:
 	https://github.com/1AmYF/aos-server-mods/blob/master/scripts/piqueserver/parkour.py
 
-waterbug glitch fix is a feature implemented on the FL parkour server by DryByte
+I just realized (10 min after uploading this script) that DryBytes parkour server code is open to public:
+	https://github.com/FL-AoS/Parkour-Server
 
 Authors:
 	VierEck.
