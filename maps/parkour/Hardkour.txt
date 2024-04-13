@@ -26,7 +26,7 @@ for name in scripts_option.get():
 	if "parkour" in name.lower():
 		names_to_check.append(join(config.config_dir, "scripts/" + name))
 if "parkour" in game_mode.get().lower():
-	names_to_check.append(join(config.config_dir, "game_modes/" + name))
+	names_to_check.append(join(config.config_dir, "game_modes/" + game_mode.get()))
 
 for name in names_to_check:
 	if not exists(name):
