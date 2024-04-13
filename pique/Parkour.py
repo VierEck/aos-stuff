@@ -106,6 +106,7 @@ def apply_script(pro, con, cfg):
 			c.parkour_cp_time    = time()
 			tell_time(c, c.parkour_cp_time - old_cp_time, c.parkour_cp_death_count,  
 				"%s, checkpoint split: %s mins, %s deaths")
+			c.parkour_cp_death_count = 0
 		
 		def parkour_on_complete(c):
 			if c.parkour_start_time is not None:
@@ -138,7 +139,8 @@ def apply_script(pro, con, cfg):
 		def on_kill(c, killer, type_, nade):
 			p = c.protocol
 			if c.team is p.team_1:
-				c.parkour_death_count += 1
+				c.parkour_death_count    += 1
+				c.parkour_cp_death_count += 1
 			return con.on_kill(c, killer, type_, nade)
 		
 		def on_refill(c):
