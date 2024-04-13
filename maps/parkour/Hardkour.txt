@@ -22,17 +22,17 @@ from piqueserver.server import scripts_option, game_mode
 
 names_to_check = []
 
-for name in scripts_option.get():
-	if "parkour" in name.lower():
-		names_to_check.append(join(config.config_dir, "scripts/" + name))
+for script_name in scripts_option.get():
+	if "parkour" in script_name.lower():
+		names_to_check.append(join(config.config_dir, "scripts/" + script_name))
 if "parkour" in game_mode.get().lower():
 	names_to_check.append(join(config.config_dir, "game_modes/" + game_mode.get()))
 
-for name in names_to_check:
+for script_name in names_to_check:
 	if not exists(name):
-		name += ".py"
-	if exists(name):
-		with open(name, "r") as f:
+		script_name += ".py"
+	if exists(script_name):
+		with open(script_name, "r") as f:
 			if "parkour_3d_checkpoints" in f.read():
 				#compatibility with DryByte's 3d checkpoint extension
 				cps = extensions["parkour_checkpoints"]
