@@ -4,13 +4,13 @@ author = "VierEck."
 description = ("A short but hard challenge.")
 
 extensions = {
-	"water_damage"               : 100,
-	"parkour_start"              : (192, 256, 48),
-	"parkour_end"                : (320, 256, 48),
-	"parkour_checkpoints"        : [ (208, 256, 52), (221, 256, 52), (237, 256, 52), 
-	                                 (256, 256, 54), (269, 256, 53), (287, 256, 55), ],
-	"parkour_3d_checkpoints"     : True,
-	"parkour_3d_checkpoints_size": (2, 2, 4),
+	"water_damage"            : 100,
+	"parkour_start"           : (192, 256, 48),
+	"parkour_end"             : (320, 256, 48),
+	"parkour_checkpoints"     : [ (208, 256, 52), (221, 256, 52), (237, 256, 52), 
+	                              (256, 256, 54), (269, 256, 53), (287, 256, 55), ],
+	"parkour_3d_checkpoints"  : True,
+	"parkour_checkpoints_size": (2, 2, 4),
 }
 fog = (0, 0, 0)
 
