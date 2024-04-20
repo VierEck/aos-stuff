@@ -1,5 +1,5 @@
 '''
-record gameplay on your server. base script
+record gameplay on your server. 
 
 
 this script is based on aos_replay by BR:
