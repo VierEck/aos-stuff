@@ -273,4 +273,5 @@ def apply_script(pro, con, cfg):
 			p.replay_end()
 			return pro.on_map_leave(p)
 	
+	
 	return replay_P, replay_C
