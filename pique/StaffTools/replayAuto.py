@@ -10,7 +10,7 @@ Authors:
 '''
 
 
-from os import path, listdir, isfile, remove, stat, getsize
+from os import path, listdir, remove, stat, getsize
 from time import monotonic as time
 from twisted.logger import Logger
 from piqueserver.config import config
