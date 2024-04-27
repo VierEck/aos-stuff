@@ -141,7 +141,7 @@ def ExistingPlayer(data):
 	kills = unpack("I", data[4:8])
 	return ("09/ExistingPlayer   : (" + str(pl_id) + pl_name + ")(team: " + str(data[1]) 
 		+ ")(weap: " + WEAP_IDs[data[2]] + ")(tool: " + TOOL_IDs[data[3]] + ")(kills: " + str(kills)
-		+ ")(color: " + str(data[8]) + ", " + str(data[9]) + ", " + str(data[10]) + ")"
+		+ ")(color: " + str(data[10]) + ", " + str(data[9]) + ", " + str(data[8]) + ")"
 		+ "(name: " + decode_name + ")")
 packets[9] = ExistingPlayer
 
