@@ -54,7 +54,7 @@ def WorldUpdate(data):
 				info += "(" + str(j) + ")"
 				info += "(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")"
 				info += "(ori: " + "{:5.2f}".format(a) + ", " + "{:5.2f}".format(b) + ", " + "{:5.2f}".format(c) + "); "
-				break;
+				break
 	return "02/WorldUpdate      : " + info
 packets[2] = WorldUpdate
 
