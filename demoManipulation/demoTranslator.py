@@ -428,7 +428,7 @@ def translate(file_name):
 				nf.write("[" + "{:015.4f}".format(time))
 				pkt = ""
 				try:
-					pkt = packets[pkt_id](data[1:])
+					pkt = ": " + packets[pkt_id](data[1:])
 				except KeyError:
 					pass
 				nf.write(pkt)
