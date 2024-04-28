@@ -262,16 +262,17 @@ def KillAction(data):
 packets[16] = KillAction
 
 def ChatMessage(data):
-	messenger = "#server" #afaik ppl r not allowed to have # infront their names so this is unambigious
-	chat_type = "global"
 	pl_id = data[0]
-	if data[0] in players:
-		messenger = players[pl_id]
+	pl_name = ""
+	if pl_id in players:
+		pl_name = ": " + players[pl_id]
+	chat_type = "global"
 	if data[1] == 1:
 		chat_type = "team"
 	elif data[1] == 2:
 		chat_type = "sys"
-	return "17/ChatMessage      : (" + chat_type + ", " + messenger + ": " + data[2:-1].decode("cp437", "replace") + ")"
+	return ("17/ChatMessage      : (" + str(pl_id) + pl_name + 
+		")(" + chat_type + ")(" + data[2:-1].decode("cp437", "replace") + ")")
 packets[17] = ChatMessage
 
 def MapStart(data):
