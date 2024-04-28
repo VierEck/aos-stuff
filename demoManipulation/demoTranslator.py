@@ -269,6 +269,8 @@ def ChatMessage(data):
 		messenger = players[pl_id]
 	if data[1] == 1:
 		chat_type = "team"
+	elif data[1] == 2:
+		chat_type = "sys"
 	return "17/ChatMessage      : (" + chat_type + ", " + messenger + ": " + data[2:-1].decode("cp437", "replace") + ")"
 packets[17] = ChatMessage
 
