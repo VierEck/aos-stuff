@@ -376,11 +376,11 @@ def ChangeWeapon(data):
 packets[30] = ChangeWeapon
 
 def HandshakeInit(data):
-	return "31/HandshakeInit"
+	return "31/HandshakeInit    : (" + unpack("I", data[0]) + ")"
 packets[31] = HandshakeInit
 
 def HandshakeResponse(data):
-	return "32/HandshakeResponse"
+	return "32/HandshakeResponse: (" + unpack("I", data[0]) + ")"
 packets[32] = HandshakeResponse
 
 def VersionGet(data):
@@ -423,9 +423,12 @@ def translate(file_name):
 				if pkt_id in pkt_filter:
 					continue
 				nf.write("[" + "{:015.4f}".format(time))
-				if pkt_id in packets:
-					#print("pkt: " + str(pkt_id)) #dbg
-					nf.write(": " + packets[pkt_id](data[1:]))
+				pkt = ""
+				try:
+					pkt = packets[pkt_id](data[1:])
+				except KeyError:
+					pass
+				nf.write(pkt)
 				nf.write("]\n")
 			nf.close()
 		of.close()
