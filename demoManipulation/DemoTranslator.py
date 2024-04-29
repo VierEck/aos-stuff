@@ -133,7 +133,12 @@ packets[8] = SetColor
 
 def ExistingPlayer(data):
 	pl_id = data[0]
-	decode_name = data[11:-1].decode("cp437", "replace")
+	decode_name_l = list(data[11:-1].decode("cp437", "replace"))
+	decode_name = []
+	for c in decode_name_l:
+		if c not in ("[", "]", "(", ")"):
+			decode_name.append(c)
+	decode_name = "".join(decode_name)
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
@@ -162,7 +167,12 @@ packets[11] = MoveObject
 
 def CreatePlayer(data):
 	pl_id = data[0]
-	decode_name = data[15:-1].decode("cp437", "replace")
+	decode_name_l = list(data[11:-1].decode("cp437", "replace"))
+	decode_name = []
+	for c in decode_name_l:
+		if c not in ("[", "]", "(", ")"):
+			decode_name.append(c)
+	decode_name = "".join(decode_name)
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
@@ -240,11 +250,19 @@ def StateData(data):
 	game_mode = "ctf"
 	if data[30] > 0:
 		game_mode = "tc"
+	team1_name_l = data[10:20].decode("cp437", "replace")
+	team2_name_l = data[20:30].decode("cp437", "replace")
+	team1_name = []
+	team2_name = []
+	for l in [[team1_name_l, team1_name], [team2_name_l, team2_name]]:
+		for c in l[0]:
+			if c not in ("[", "]", "(", ")"):
+				l[1].append(c)
 	return ("15/StateData        : (" + str(pl_id) + pl_name
 		+ ")(fog: " + str(data[3]) + ", " + str(data[2]) + ", " +  str(data[1])
 		+ ")(team1: " + str(data[6]) + ", " + str(data[5]) + ", " +  str(data[4])
 		+ ")(team2: " + str(data[9]) + ", " + str(data[8]) + ", " +  str(data[7])
-		+ ")(team1: " + data[10:20].decode("cp437", "replace") + ")(team2: " + data[20:30].decode("cp437", "replace")
+		+ ")(team1: " + "".join(team1_name) + ")(team2: " + "".join(team2_name) 
 		+ ")(mode: " + game_mode + ")" + GAME_STATEs[data[30]](data[31:]))
 packets[15] = StateData
 
