@@ -25,28 +25,23 @@ BLOCK_IDs = { "block": 0, "lmb"  : 1, "rmb"  : 2, "nade": 3, }
 KILL_IDs  = { "body" : 0, "head" : 1, "melee": 2, "nade": 3, "fall": 4, "team": 5, "class": 6, }
 
 packets = {}
+filter_packets = []
 
 
-def get_nums(s): #either a list of ints or a list of floats. 
-	is_float = False
+def get_nums(s): #list could be a mix of floats and ints. syntax sensitive
 	n = [""]
 	for c in s:
-		if c.isdigit():
-			n[-1] += c
-		elif c == ".":
-			is_float = True
-			n[-1] += c
-		elif c == "-" and len(n[-1]) <= 0:
+		if c.isdigit() or (c == "." and "." not in n[-1]) or (c == "-" and len(n[-1]) <= 0):
 			n[-1] += c
 		elif len(n[-1]) > 0:
-			if n[-1] == "-":
-				n = ""
-			else:
-				n.append("")
-	if len(n[-1]) <= 0:
-		n = n[:-1]
-	for i in range(len(n)):
-		n[i] = float(n[i]) if is_float else int(n[i])
+			n.append("")
+	i = 0
+	while type(n[-1]) is str and i < len(n):
+		if n[i] in (".", "-") or len(n[i]) <= 0:
+			del n[i]
+		else:
+			n[i] = float(n[i]) if "." in n[i] else int(n[i])
+			i += 1
 	return n
 
 
@@ -117,7 +112,7 @@ def SetTool(data):
 	tool = 0
 	for k in TOOL_IDs.keys():
 		if k in data[1]:
-			tool = TOOL_IDs(k)
+			tool = TOOL_IDs[k]
 			break
 	return pack("BB", get_nums(data[0])[0], tool)
 packets[7] = SetTool
@@ -263,16 +258,12 @@ def Restock(data):
 packets[26] = Restock
 
 def FogColor(data):
-	return pack("BBB", *get_nums(data[0])[::-1])
+	return pack("BBBB", *get_nums(data[0])[::-1])
 packets[27] = FogColor
 
 def WeaponReload(data):
 	return pack("BBB", get_nums(data[0])[0], get_nums(data[1])[0], get_nums(data[2])[0])
 packets[28] = WeaponReload
-
-def ChangeTeam(data):
-	return pack("BB", get_nums(data[0])[0], get_nums(data[1])[0])
-packets[29] = ChangeTeam
 
 def ChangeWeapon(data):
 	weap = 0
@@ -281,7 +272,11 @@ def ChangeWeapon(data):
 			weap = WEAP_IDs[k]
 			break
 	return pack("BB", get_nums(data[0])[0], weap)
-packets[30] = ChangeWeapon
+packets[29] = ChangeWeapon
+
+def ChangeTeam(data):
+	return pack("BB", get_nums(data[0])[0], get_nums(data[1])[0])
+packets[30] = ChangeTeam
 
 def HandshakeInit(data):
 	return pack("I", get_nums(data[0])[0])
@@ -329,11 +324,12 @@ def retranslate(file_name):
 			while True:
 				c = of.read(1)
 				if c == "":
+					print("done")
 					break
 				elif c == "[":
 					newTime = pkt_id = word = ""
 					data = []
-				elif c == "]":
+				elif c == "]" and pkt_id not in filter_packets:
 					try:
 						data = packets[pkt_id](data)
 						if type(data) is bytes:
@@ -342,6 +338,7 @@ def retranslate(file_name):
 							nf.write(data)
 					except Exception as e: #tell user where the mistake is in their (handwritten) demo txt
 						print("Exception near packet (timestamp): " + str(time))
+						print("                        packet id: " + str(pkt_id))
 						print(e)
 						return -4
 				elif type(newTime) is str:
