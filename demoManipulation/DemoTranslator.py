@@ -350,7 +350,7 @@ packets[26] = Restock
 
 def FogColor(data):
 	return ("27/FogColor         : " 
-		+ ")(fog: " + str(data[3]) + ", " + str(data[2]) + ", " + str(data[1]) + str(data[0]) + ")")
+		+ "(fog: " + str(data[3]) + ", " + str(data[2]) + ", " + str(data[1]) + ", " + str(data[0]) + ")")
 packets[27] = FogColor
 
 def WeaponReload(data):
