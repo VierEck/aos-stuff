@@ -379,11 +379,11 @@ def ChangeWeapon(data):
 packets[30] = ChangeWeapon
 
 def HandshakeInit(data):
-	return "31/HandshakeInit    : (" + unpack("I", data[0]) + ")"
+	return "31/HandshakeInit    : (" + str(int(unpack("I", data)[0])) + ")"
 packets[31] = HandshakeInit
 
 def HandshakeResponse(data):
-	return "32/HandshakeResponse: (" + unpack("I", data[0]) + ")"
+	return "32/HandshakeResponse: (" + str(int(unpack("I", data)[0])) + ")"
 packets[32] = HandshakeResponse
 
 def VersionGet(data):
