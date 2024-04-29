@@ -271,8 +271,13 @@ def ChatMessage(data):
 		chat_type = "team"
 	elif data[1] == 2:
 		chat_type = "sys"
+	msg_l = list(data[2:-1].decode("cp437", "replace"))
+	msg = []
+	for c in msg_l:
+		if c not in ("[", "]", "(", ")"):
+			msg.append(c)
 	return ("17/ChatMessage      : (" + str(pl_id) + pl_name + 
-		")(" + chat_type + ")(" + data[2:-1].decode("cp437", "replace") + ")")
+		")(" + chat_type + ")(" + "".join(msg) + ")")
 packets[17] = ChatMessage
 
 def MapStart(data):
