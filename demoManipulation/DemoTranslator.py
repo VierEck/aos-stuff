@@ -167,7 +167,7 @@ packets[11] = MoveObject
 
 def CreatePlayer(data):
 	pl_id = data[0]
-	decode_name_l = list(data[11:-1].decode("cp437", "replace"))
+	decode_name_l = list(data[15:-1].decode("cp437", "replace"))
 	decode_name = []
 	for c in decode_name_l:
 		if c not in ("[", "]", "(", ")"):
