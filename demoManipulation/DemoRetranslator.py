@@ -46,18 +46,18 @@ def get_nums(s): #list could be a mix of floats and ints. syntax sensitive
 
 
 def Positiondata(data):
-	return pack("fff", *get_nums(data[0]))
+	return pack("<fff", *get_nums(data[0]))
 packets[0] = Positiondata
 
 def Orientationdata(data):
-	return pack("fff", *get_nums(data[0]))
+	return pack("<fff", *get_nums(data[0]))
 packets[1] = Orientationdata
 
 def WorldUpdate(data):
 	b = b""
 	i = 0
 	while i < len(data):
-		b += pack("ffffff", *get_nums(data[i + 1]), *get_nums(data[i + 2]))
+		b += pack("<ffffff", *get_nums(data[i + 1]), *get_nums(data[i + 2]))
 		i += 3
 	return b
 packets[2] = WorldUpdate
@@ -81,7 +81,7 @@ def Inputdata(data):
 		inp |= 0b01000000
 	if "spring" in inp_str:
 		inp |= 0b10000000
-	return pack("BB", get_nums(data[0])[0], inp)
+	return pack("<BB", get_nums(data[0])[0], inp)
 packets[3] = Inputdata
 
 def WeaponInput(data):
@@ -91,21 +91,21 @@ def WeaponInput(data):
 		inp |= 0b00000001
 	if "sec" in weap_str:
 		inp |= 0b00000010
-	return pack("BB", get_nums(data[0])[0], weap)
+	return pack("<BB", get_nums(data[0])[0], weap)
 packets[4] = WeaponInput
 
 def SetHp(data):
 	type_ = 0 #=fall
 	if "weap" in data[1].lower():
 		type_ = 1
-	return pack("BBfff", get_nums(data[0])[0], type_, *get_nums(data[2]))
+	return pack("<BBfff", get_nums(data[0])[0], type_, *get_nums(data[2]))
 packets[5] = SetHp
 
 def GrenadePacket(data):
 	nums = [get_nums(data[0])[0]]
 	for d in data[1:]:
 		nums.extend(get_nums(d))
-	return pack("Bfffffff", *nums)
+	return pack("<Bfffffff", *nums)
 packets[6] = GrenadePacket
 
 def SetTool(data):
@@ -114,11 +114,11 @@ def SetTool(data):
 		if k in data[1]:
 			tool = TOOL_IDs[k]
 			break
-	return pack("BB", get_nums(data[0])[0], tool)
+	return pack("<BB", get_nums(data[0])[0], tool)
 packets[7] = SetTool
 
 def SetColor(data):
-	return pack("BBBB", get_nums(data[0])[0], *get_nums(data[1])[::-1])
+	return pack("<BBBB", get_nums(data[0])[0], *get_nums(data[1])[::-1])
 packets[8] = SetColor	
 
 def ExistingPlayer(data):
@@ -135,7 +135,7 @@ def ExistingPlayer(data):
 			break
 	nums[4] = get_nums(data[4])[0]
 	nums.extend(get_nums(data[-2])[::-1])
-	return pack("BBBBIBBB", *nums) + data[-1].encode("cp437")
+	return pack("<BBBBIBBB", *nums) + data[-1][5:].encode("cp437")
 packets[9] = ExistingPlayer
 
 def ShortPlayer(data):
@@ -145,11 +145,11 @@ def ShortPlayer(data):
 		if k in data[2]:
 			nums[2] = WEAP_IDs[k]
 			break
-	return pack("BBB", *nums)
+	return pack("<BBB", *nums)
 packets[10] = ShortPlayer
 
 def MoveObject(data):
-	return pack("BBfff", get_nums(data[0])[0], get_nums(data[1])[0], *get_nums(data[2]))
+	return pack("<BBfff", get_nums(data[0])[0], get_nums(data[1])[0], *get_nums(data[2]))
 packets[11] = MoveObject
 
 def CreatePlayer(data):
@@ -160,7 +160,7 @@ def CreatePlayer(data):
 			break
 	nums[2] = get_nums(data[2])[0]
 	nums.extend(get_nums(data[3]))
-	return pack("BBBfff", *nums) + data[-1].encode("cp437")
+	return pack("<BBBfff", *nums) + data[-1][5:].encode("cp437")
 packets[12] = CreatePlayer
 
 def BlockAction(data):
@@ -170,11 +170,11 @@ def BlockAction(data):
 			nums[1] = BLOCK_IDs[k]
 			break
 	nums.extend(get_nums(data[2]))
-	return pack("BBIII", *nums)
+	return pack("<BBIII", *nums)
 packets[13] = BlockAction
 
 def BlockLine(data):
-	return pack("BIIIIII", get_nums(data[0])[0], *get_nums(data[1]), *get_nums(data[2]))
+	return pack("<BIIIIII", get_nums(data[0])[0], *get_nums(data[1]), *get_nums(data[2]))
 packets[14] = BlockLine
 
 def CTFState(data):
@@ -197,7 +197,7 @@ def KillAction(data):
 		if k in data[2]:
 			nums[2] = KILL_IDs[k]
 	nums[3] = get_nums(data[3])[0]
-	return pack("BBBB", *nums)
+	return pack("<BBBB", *nums)
 packets[16] = KillAction
 
 def ChatMessage(data):
@@ -206,11 +206,11 @@ def ChatMessage(data):
 		type_ = 1
 	elif "sys" in data[1]:
 		type_ = 2
-	return pack("BB", get_nums(data[0])[0], type_) + data[-1].encode("cp437")
+	return pack("<BB", get_nums(data[0])[0], type_) + data[-1].encode("cp437")
 packets[17] = ChatMessage
 
 def MapStart(data):
-	return pack("I", get_nums(data[0])[0])
+	return pack("<I", get_nums(data[0])[0])
 packets[18] = MapStart
 
 def MapChunk(data):
@@ -219,7 +219,7 @@ def MapChunk(data):
 packets[19] = MapChunk
 
 def PlayerLeft(data):
-	return pack("B", get_nums(data[0])[0])
+	return pack("<B", get_nums(data[0])[0])
 packets[20] = PlayerLeft
 
 def TerritoryCapture(data):
@@ -229,7 +229,7 @@ def TerritoryCapture(data):
 		nums[1] = 1
 	nums[2] = get_nums(data[2])[0]
 	nums[3] = get_nums(data[3])[0]
-	return pack("BBBB", *nums)
+	return pack("<BBBB", *nums)
 packets[21] = TerritoryCapture
 
 def ProgressBar(data):
@@ -237,32 +237,32 @@ def ProgressBar(data):
 	for i in range(len(nums)):
 		nums[i] = get_nums(data[i])[0]
 	nums[3] /= 100
-	return pack("BBbf", *nums)
+	return pack("<BBbf", *nums)
 packets[22] = ProgressBar
 
 def IntelCapture(data):
 	win = 1 if "w" in data[1] else 0
-	return pack("BB", get_nums(data[0])[0], win)
+	return pack("<BB", get_nums(data[0])[0], win)
 packets[23] = IntelCapture
 
 def IntelPickup(data):
-	return pack("B", get_nums(data[0])[0])
+	return pack("<B", get_nums(data[0])[0])
 packets[24] = IntelPickup
 
 def IntelDrop(data):
-	return pack("Bfff", get_nums(data[0])[0], *get_nums(data[1]))
+	return pack("<Bfff", get_nums(data[0])[0], *get_nums(data[1]))
 packets[25] = IntelDrop
 
 def Restock(data):
-	return pack("B", get_nums(data[0])[0])
+	return pack("<B", get_nums(data[0])[0])
 packets[26] = Restock
 
 def FogColor(data):
-	return pack("BBBB", *get_nums(data[0])[::-1])
+	return pack("<BBBB", *get_nums(data[0])[::-1])
 packets[27] = FogColor
 
 def WeaponReload(data):
-	return pack("BBB", get_nums(data[0])[0], get_nums(data[1])[0], get_nums(data[2])[0])
+	return pack("<BBB", get_nums(data[0])[0], get_nums(data[1])[0], get_nums(data[2])[0])
 packets[28] = WeaponReload
 
 def ChangeWeapon(data):
@@ -271,19 +271,19 @@ def ChangeWeapon(data):
 		if k in data[1]:
 			weap = WEAP_IDs[k]
 			break
-	return pack("BB", get_nums(data[0])[0], weap)
+	return pack("<BB", get_nums(data[0])[0], weap)
 packets[29] = ChangeWeapon
 
 def ChangeTeam(data):
-	return pack("BB", get_nums(data[0])[0], get_nums(data[1])[0])
+	return pack("<BB", get_nums(data[0])[0], get_nums(data[1])[0])
 packets[30] = ChangeTeam
 
 def HandshakeInit(data):
-	return pack("I", get_nums(data[0])[0])
+	return pack("<I", get_nums(data[0])[0])
 packets[31] = HandshakeInit
 
 def HandshakeResponse(data):
-	return pack("I", get_nums(data[0])[0])
+	return pack("<I", get_nums(data[0])[0])
 packets[32] = HandshakeResponse
 
 def VersionGet(data):
@@ -303,7 +303,7 @@ def VersionResponse(data):
 				break
 	for j in range(len(nums)):
 		nums[j] = 0 if len(nums[j]) <= 0 else int(nums[j])
-	return pack("bbbb", client.encode("cp437"), *nums) + data[-1].encode("cp437")
+	return pack("<bbbb", client.encode("cp437"), *nums) + data[-1].encode("cp437")
 packets[34] = VersionResponse
 
 
@@ -317,7 +317,7 @@ def retranslate(file_name):
 		if AOS_PROTOCOL_VER != int(of.readline().split(":")[-1]):
 			return -3
 		with open(file_name + ".demo", "wb") as nf:
-			nf.write(pack("BB", AOS_REPLAY_VER, AOS_PROTOCOL_VER))
+			nf.write(pack("<BB", AOS_REPLAY_VER, AOS_PROTOCOL_VER))
 			time = float(0)
 			newTime = pkt_id = word = ""
 			data = []
@@ -333,7 +333,7 @@ def retranslate(file_name):
 					try:
 						data = packets[pkt_id](data)
 						if type(data) is bytes:
-							nf.write(pack("fHB", newTime - time, len(data) + 1, pkt_id))
+							nf.write(pack("<fHB", newTime - time, len(data) + 1, pkt_id))
 							time = newTime
 							nf.write(data)
 					except Exception as e: #tell user where the mistake is in their (handwritten) demo txt
