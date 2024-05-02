@@ -206,7 +206,7 @@ def ChatMessage(data):
 		type_ = 1
 	elif "sys" in data[1]:
 		type_ = 2
-	return pack("<BB", get_nums(data[0])[0], type_) + data[-1].encode("cp437")
+	return pack("<BB", get_nums(data[0])[0], type_) + data[-1].encode("cp437", "replace")
 packets[17] = ChatMessage
 
 def MapStart(data):
@@ -331,11 +331,14 @@ def retranslate(file_name):
 					data = []
 				elif c == "]" and pkt_id not in filter_packets:
 					try:
-						data = packets[pkt_id](data)
-						if type(data) is bytes:
-							nf.write(pack("<fHB", newTime - time, len(data) + 1, pkt_id))
-							time = newTime
-							nf.write(data)
+						try:
+							data = packets[pkt_id](data)
+							if type(data) is bytes:
+								nf.write(pack("<fHB", newTime - time, len(data) + 1, pkt_id))
+								time = newTime
+								nf.write(data)
+						except KeyError:
+							print("packet id not recognised: " + str(pkt_id))
 					except Exception as e: #tell user where the mistake is in their (handwritten) demo txt
 						print("Exception near packet (timestamp): " + str(time))
 						print("                        packet id: " + str(pkt_id))
