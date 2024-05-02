@@ -453,7 +453,7 @@ def translate(file_name):
 				try:
 					pkt = ": " + packets[pkt_id](data[1:])
 				except KeyError:
-					pass
+					print("packet not recognised: " + str(pkt_id))
 				nf.write(pkt)
 				nf.write("]\n")
 			nf.close()
