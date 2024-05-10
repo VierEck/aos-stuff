@@ -31,14 +31,12 @@ pkt_filter = [ 2, 3, 4, ]
 
 def PositionData(data):
 	x, y, z = unpack("fff", data[0:12])
-	return ("00/PositionData     : (" 
-		+ "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")")
+	return ("00/PositionData     : (" + f"{x:5.2f}" + ", " + f"{y:5.2f}" + ", " + f"{z:5.2f}" + ")")
 packets[0] = PositionData
 
 def OrientationData(data):
 	x, y, z = unpack("fff", data[0:12])
-	return ("01/OrientationData  : (" 
-		+ "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")")
+	return ("01/OrientationData  : (" + f"{x:5.2f}" + ", " + f"{y:5.2f}" + ", " + f"{z:5.2f}" + ")")
 packets[1] = OrientationData
 
 def WorldUpdate(data):
@@ -51,16 +49,16 @@ def WorldUpdate(data):
 		j += 1
 		for val in [x, y, z, a, b, c]:
 			if val != 0:
-				info += "(" + str(j) + ")"
-				info += "(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")"
-				info += "(ori: " + "{:5.2f}".format(a) + ", " + "{:5.2f}".format(b) + ", " + "{:5.2f}".format(c) + "); "
+				info += "(" + f"{j:02d}" + ")"
+				info += "(pos: " + f"{x:5.2f}" + ", " + f"{y:5.2f}" + ", " + f"{z:5.2f}" + ")"
+				info += "(ori: " + f"{a:5.2f}" + ", " + f"{b:5.2f}" + ", " + f"{c:5.2f}" + "); "
 				break
 	return "02/WorldUpdate      : " + info
 packets[2] = WorldUpdate
 
 def InputData(data):
 	pl_id = data[0]
-	pl_info = str(pl_id)
+	pl_info = f"{pl_id:02d}"
 	if pl_id in players:
 		pl_info += ": " + players[pl_id]
 	inp_info = ""
@@ -85,7 +83,7 @@ packets[3] = InputData
 
 def WeaponInput(data):
 	pl_id = data[0]
-	pl_info = str(pl_id)
+	pl_info = f"{pl_id:02d}"
 	if pl_id in players:
 		pl_info += ": " + players[pl_id]
 	weap_info = ""
@@ -100,7 +98,7 @@ def SetHp(data):
 	x, y, z = unpack("fff", data[2:14])
 	info_Type = "fall" if not data[1] else "weap"
 	return ("05/SetHp            : (hp: " + str(data[0]) + ")(type: " + info_Type
-		+ ")(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")")
+		+ ")(pos: " + f"{x:5.2f}" + ", " + f"{y:5.2f}" + ", " + f"{z:5.2f}" + ")")
 packets[5] = SetHp
 
 def GrenadePacket(data):
@@ -109,9 +107,9 @@ def GrenadePacket(data):
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
 	fuse, x, y, z, a, b, c = unpack("fffffff", data[1:29])
-	return ("06/GrenadePacket    : (" + str(pl_id) + pl_name + ")(fuse: " + str(fuse) 
-		+ ")(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) 
-		+ ")(vel: " + "{:5.2f}".format(a) + ", " + "{:5.2f}".format(b) + ", " + "{:5.2f}".format(c) + ")")
+	return ("06/GrenadePacket    : (" + f"{pl_id:02d}" + pl_name + ")(fuse: " + str(fuse) 
+		+ ")(pos: " + f"{x:5.2f}" + ", " + f"{y:5.2f}" + ", " + f"{z:5.2f}"
+		+ ")(vel: " + f"{a:5.2f}" + ", " + f"{b:5.2f}" + ", " + f"{c:5.2f}" + ")")
 packets[6] = GrenadePacket
 
 def SetTool(data):
@@ -119,7 +117,7 @@ def SetTool(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return "07/SetTool          : (" + str(pl_id) + pl_name + ")(tool: " + TOOL_IDs[data[1]] + ")"
+	return "07/SetTool          : (" + f"{pl_id:02d}" + pl_name + ")(tool: " + TOOL_IDs[data[1]] + ")"
 packets[7] = SetTool
 
 def SetColor(data):
@@ -127,7 +125,7 @@ def SetColor(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return ("08/SetColor         : (" + str(pl_id) + pl_name 
+	return ("08/SetColor         : (" + f"{pl_id:02d}" + pl_name 
 		+ ")(color: " + str(data[3]) + ", " + str(data[2]) + ", " + str(data[1]) + ")")
 packets[8] = SetColor	
 
@@ -144,7 +142,7 @@ def ExistingPlayer(data):
 		pl_name = ": " + players[pl_id]
 	players[pl_id] = decode_name
 	kills = unpack("I", data[4:8])[0]
-	return ("09/ExistingPlayer   : (" + str(pl_id) + pl_name + ")(team: " + str(data[1]) 
+	return ("09/ExistingPlayer   : (" + f"{pl_id:02d}" + pl_name + ")(team: " + str(data[1]) 
 		+ ")(weap: " + WEAP_IDs[data[2]] + ")(tool: " + TOOL_IDs[data[3]] + ")(kills: " + str(kills)
 		+ ")(color: " + str(data[10]) + ", " + str(data[9]) + ", " + str(data[8]) + ")"
 		+ "(name: " + decode_name + ")")
@@ -155,14 +153,14 @@ def ShortPlayer(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return ("10/ShortPlayer      : (" + str(pl_id) + pl_name 
+	return ("10/ShortPlayer      : (" + f"{pl_id:02d}" + pl_name 
 		+ ")(team: " + str(data[1]) + ")(weap: " + WEAP_IDs[data[2]] + ")")
 packets[10] = ShortPlayer
 
 def MoveObject(data):
 	x, y, z = unpack("fff", data[2:14])
 	return ("11/MoveObject       : (obj: " + str(data[0]) + ")(team: " + str(data[1]) 
-		+ ")(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")")
+		+ ")(pos: " + f"{x:5.2f}" + ", " + f"{y:5.2f}" + ", " + f"{z:5.2f}" + ")")
 packets[11] = MoveObject
 
 def CreatePlayer(data):
@@ -178,10 +176,9 @@ def CreatePlayer(data):
 		pl_name = ": " + players[pl_id]
 	players[pl_id] = decode_name
 	x, y, z = unpack("fff", data[3:15])
-	return ("12/CreatePlayer     : (" + str(pl_id) + pl_name 
+	return ("12/CreatePlayer     : (" + f"{pl_id:02d}" + pl_name 
 		+ ")(weap: " + WEAP_IDs[data[1]] + ")(team: " + str(data[2])
-		+ ")(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z)
-		+ ")(name: " + decode_name + ")")
+		+ ")(pos: " + f"{x:5.2f}" + ", " + f"{y:5.2f}" + ", " + f"{z:5.2f}" + ")(name: " + decode_name + ")")
 packets[12] = CreatePlayer
 
 def BlockAction(data):
@@ -190,7 +187,7 @@ def BlockAction(data):
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
 	x, y, z = unpack("III", data[2:14])
-	return ("13/BlockAction      : (" + str(pl_id) + pl_name + ")(action: " + BLOCK_IDs[data[1]]
+	return ("13/BlockAction      : (" + f"{pl_id:02d}" + pl_name + ")(action: " + BLOCK_IDs[data[1]]
 		+ ")(pos: " + str(x) + ", " + str(y) + ", " + str(z) + ")")
 packets[13] = BlockAction
 
@@ -200,7 +197,7 @@ def BlockLine(data):
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
 	x, y, z, a, b, c = unpack("IIIIII", data[1:25])
-	return ("14/BlockLine        : (" + str(pl_id) + pl_name
+	return ("14/BlockLine        : (" + f"{pl_id:02d}" + pl_name
 		+ ")(start: " + str(x) + ", " + str(y) + ", " + str(z) 
 		+ ")(end: " + str(a) + ", " + str(b) + ", " + str(c) + ")")
 packets[14] = BlockLine
@@ -212,23 +209,23 @@ def CTFState(data):
 		pl_name = ""
 		if pl_id in players:
 			pl_name = ": " + players[pl_id]
-		info += "(player1: " + str(pl_id) + pl_name + ")"
+		info += "(player1: " + f"{pl_id:02d}" + pl_name + ")"
 	else:
 		x, y, z = unpack("fff", data[4:16])
-		info += "(pos1: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")"
+		info += "(pos1: " + f"{x:5.2f}" + ", " + f"{y:5.2f}" + ", " + f"{z:5.2f}" + ")"
 	if data[3] & 0b00000010:
 		pl_id = data[16]
 		pl_name = ""
 		if pl_id in players:
 			pl_name = ": " + players[pl_id]
-		info += "(player2: " + str(pl_id) + pl_name + ")"
+		info += "(player2: " + f"{pl_id:02d}" + pl_name + ")"
 	else:
 		x, y, z = unpack("fff", data[16:28])
-		info += "(pos2: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")"
+		info += "(pos2: " + f"{x:5.2f}" + ", " + f"{y:5.2f}" + ", " + f"{z:5.2f}" + ")"
 	x1, y1, z1, x2, y2, z2 = unpack("ffffff", data[28:52])
 	return ("(score1: " + str(data[0]) + ")(score2: " + str(data[1]) + ")(limit: " + str(data[2]) + info
-		+ "(base1: " + "{:5.2f}".format(x1) + ", " + "{:5.2f}".format(y1) + ", " + "{:5.2f}".format(z1) 
-		+ ")(base2: " + "{:5.2f}".format(x2) + ", " + "{:5.2f}".format(y2) + ", " + "{:5.2f}".format(z2) + ")")
+		+ "(base1: " + f"{x1:5.2f}" + ", " + f"{y1:5.2f}" + ", " + f"{z1:5.2f}"
+		+ ")(base2: " + f"{x2:5.2f}" + ", " + f"{y2:5.2f}" + ", " + f"{z2:5.2f}" + ")")
 
 def TCState(data):
 	info = ""
@@ -236,7 +233,7 @@ def TCState(data):
 	while i < len(data):
 		x, y, z = unpack("fff", data[i:i+12])
 		info += "(team: " + str(data[i+12]) + ")"
-		info += "(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + "); "
+		info += "(pos: " + f"{x:5.2f}" + ", " + f"{y:5.2f}" + ", " + f"{z:5.2f}" + "); "
 		i += 13
 	return "(terrs: " + str(data[0]) + "): " + info + ")"
 
@@ -258,7 +255,7 @@ def StateData(data):
 		for c in l[0]:
 			if c not in ("[", "]", "(", ")"):
 				l[1].append(c)
-	return ("15/StateData        : (" + str(pl_id) + pl_name
+	return ("15/StateData        : (" + f"{pl_id:02d}" + pl_name
 		+ ")(fog: " + str(data[3]) + ", " + str(data[2]) + ", " +  str(data[1])
 		+ ")(team1: " + str(data[6]) + ", " + str(data[5]) + ", " +  str(data[4])
 		+ ")(team2: " + str(data[9]) + ", " + str(data[8]) + ", " +  str(data[7])
@@ -275,7 +272,8 @@ def KillAction(data):
 	killer_name = ""
 	if killer_id in players:
 		killer_name = ": " + players[killer_id]
-	return ("16/KillAction       : (victim: " + str(victim_id) + victim_name + ")(killer: " + str(killer_id) + killer_name 
+	return ("16/KillAction       : (victim: " + f"{victim_id:02d}" + victim_name 
+		+ ")(killer: " + f"{killer_id:02d}" + killer_name 
 		+ ")(type: " + KILL_IDs[data[2]] + ")(respawn: " + str(data[3]) + ")")
 packets[16] = KillAction
 
@@ -294,7 +292,7 @@ def ChatMessage(data):
 	for c in msg_l:
 		if c not in ("[", "]", "(", ")"):
 			msg.append(c)
-	return ("17/ChatMessage      : (" + str(pl_id) + pl_name + 
+	return ("17/ChatMessage      : (" + f"{pl_id:02d}" + pl_name + 
 		")(" + chat_type + ")(" + "".join(msg) + ")")
 packets[17] = ChatMessage
 
@@ -311,7 +309,7 @@ def PlayerLeft(data):
 	pl_info = "(player doesnt exist)"
 	pl_id = data[0]
 	if pl_id in players:
-		pl_info = "(" + str(pl_id) + ": " + players[pl_id] + ")"
+		pl_info = "(" + f"{pl_id:02d}" + ": " + players[pl_id] + ")"
 		del players[pl_id]
 	return "20/PlayerLeft       : " + pl_info
 packets[20] = PlayerLeft
@@ -324,7 +322,7 @@ def TerritoryCapture(data):
 	win = "win"
 	if data[2] < 1:
 		win = "lose"
-	return ("20/TerritoryCapture : (" + str(pl_id) + pl_name 
+	return ("20/TerritoryCapture : (" + f"{pl_id:02d}" + pl_name 
 		+ ")(obj: " + str(data[1]) + ")(" + win + ")(team: " + str(data[3]) + ")")
 packets[21] = TerritoryCapture
 
@@ -342,7 +340,7 @@ def IntelCapture(data):
 	win = "win"
 	if data[1] < 1:
 		win = "lose"
-	return "23/IntelCapture     : (" + str(pl_id) + pl_name + ")(" + win + ")"
+	return "23/IntelCapture     : (" + f"{pl_id:02d}" + pl_name + ")(" + win + ")"
 packets[23] = IntelCapture
 
 def IntelPickup(data):
@@ -350,7 +348,7 @@ def IntelPickup(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return "24/IntelPickup      : (" + str(pl_id) + pl_name + ")"
+	return "24/IntelPickup      : (" + f"{pl_id:02d}" + pl_name + ")"
 packets[24] = IntelPickup
 
 def IntelDrop(data):
@@ -359,8 +357,8 @@ def IntelDrop(data):
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
 	x, y, z = unpack("fff", data[1:13])
-	return ("25/IntelDrop        : (" + str(pl_id) + pl_name 
-		+ ")(pos: " + "{:5.2f}".format(x) + ", " + "{:5.2f}".format(y) + ", " + "{:5.2f}".format(z) + ")")
+	return ("25/IntelDrop        : (" + f"{pl_id:02d}" + pl_name 
+		+ ")(pos: " + f"{x:5.2f}" + ", " + f"{y:5.2f}" + ", " + f"{z:5.2f}" + ")")
 packets[25] = IntelDrop
 
 def Restock(data):
@@ -368,7 +366,7 @@ def Restock(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return "26/Restock          : (" + str(pl_id) + pl_name + ")"
+	return "26/Restock          : (" + f"{pl_id:02d}" + pl_name + ")"
 packets[26] = Restock
 
 def FogColor(data):
@@ -381,7 +379,7 @@ def WeaponReload(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return ("28/WeaponReload     : (" + str(pl_id) + pl_name 
+	return ("28/WeaponReload     : (" + f"{pl_id:02d}" + pl_name 
 		+ ")(mag: " + str(data[1]) + ")(reserve: " + str(data[2]) + ")")
 packets[28] = WeaponReload
 
@@ -390,7 +388,7 @@ def ChangeTeam(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return "28/ChangeTeam       : (" + str(pl_id) + pl_name + ")(team: " + str(data[1]) + ")"
+	return "28/ChangeTeam       : (" + f"{pl_id:02d}" + pl_name + ")(team: " + str(data[1]) + ")"
 packets[29] = ChangeTeam
 
 def ChangeWeapon(data):
@@ -398,7 +396,7 @@ def ChangeWeapon(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return "29/ChangeWeapon     : (" + str(pl_id) + pl_name + ")(weap: " + WEAP_IDs[data[1]] + ")"
+	return "29/ChangeWeapon     : (" + f"{pl_id:02d}" + pl_name + ")(weap: " + WEAP_IDs[data[1]] + ")"
 packets[30] = ChangeWeapon
 
 def HandshakeInit(data):
