@@ -135,7 +135,7 @@ def ExistingPlayer(data):
 			break
 	nums[4] = get_nums(data[4])[0]
 	nums.extend(get_nums(data[-2])[::-1])
-	return pack("<BBBBIBBB", *nums) + data[-1][5:].encode("cp437")
+	return pack("<BBBBIBBB", *nums) + (data[-1][5:] + chr(0)).encode("cp437", "replace")
 packets[9] = ExistingPlayer
 
 def ShortPlayer(data):
@@ -160,7 +160,7 @@ def CreatePlayer(data):
 			break
 	nums[2] = get_nums(data[2])[0]
 	nums.extend(get_nums(data[3]))
-	return pack("<BBBfff", *nums) + data[-1][5:].encode("cp437")
+	return pack("<BBBfff", *nums) + (data[-1][5:] + chr(0)).encode("cp437", "replace")
 packets[12] = CreatePlayer
 
 def BlockAction(data):
@@ -206,7 +206,7 @@ def ChatMessage(data):
 		type_ = 1
 	elif "sys" in data[1]:
 		type_ = 2
-	return pack("<BB", get_nums(data[0])[0], type_) + data[-1].encode("cp437", "replace")
+	return pack("<BB", get_nums(data[0])[0], type_) + (data[-1] + chr(0)).encode("cp437", "replace")
 packets[17] = ChatMessage
 
 def MapStart(data):
@@ -303,7 +303,7 @@ def VersionResponse(data):
 				break
 	for j in range(len(nums)):
 		nums[j] = 0 if len(nums[j]) <= 0 else int(nums[j])
-	return pack("<bbbb", client.encode("cp437"), *nums) + data[-1].encode("cp437")
+	return pack("<bbbb", client.encode("cp437", "replace"), *nums) + data[-1].encode("cp437", "replace")
 packets[34] = VersionResponse
 
 
@@ -358,7 +358,7 @@ def retranslate(file_name):
 					word = ""
 				elif c == ")":
 					data.append(word)
-				elif not c.isspace():
+				else:
 					word += c
 			nf.close()
 		of.close()
