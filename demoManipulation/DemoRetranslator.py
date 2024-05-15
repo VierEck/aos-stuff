@@ -56,7 +56,7 @@ packets[1] = Orientationdata
 def WorldUpdate(data):
 	b = b""
 	i = 0
-	while i < len(data):
+	while i + 2 < len(data):
 		b += pack("<ffffff", *get_nums(data[i + 1]), *get_nums(data[i + 2]))
 		i += 3
 	return b
@@ -178,15 +178,44 @@ def BlockLine(data):
 packets[14] = BlockLine
 
 def CTFState(data):
-	pass #TODO
+	b = b""
+	score1 = get_nums(data[0])[-1]
+	score2 = get_nums(data[1])[-1]
+	limit  = get_nums(data[2])[-1]
+	intelflag = 0
+	if "player1" in data[3].lower():
+		intelflag |= b"00000001"
+		b += pack("<Bxxxxxxxxxxx", get_nums(data[3])[1])
+	else:
+		b += pack("<fff", *get_nums(data[3])[-3:])
+	if "player2" in data[4].lower():
+		intelflag |= b"00000010"
+		b += pack("<Bxxxxxxxxxxx", get_nums(data[4])[1])
+	else:
+		b += pack("<fff", *get_nums(data[4])[-3:])
+	return (pack("<BBBB", score1, score2, limit, intelflag) + b
+		+ pack("<ffffff", *get_nums(data[5])[-3:], *get_nums(data[6])[-3:]))
 
 def TCState(data):
-	pass #TODO
+	b = pack("<B", get_nums(data[0])[-1])
+	i = 1
+	while i + 1 < len(data):
+		b += pack("<fffB", *get_nums(data[i + 1]), *get_nums(data[i]))
+		i += 2
+	return b
 
 GAME_STATEs = { 0: CTFState, 1: TCState, }
 
 def StateData(data):
-	return False #TODO
+	pl_id      = get_nums(data[0])[0]
+	fog        = get_nums(data[1])[::-1]
+	team1_col  = get_nums(data[2])[::-1]
+	team2_col  = get_nums(data[3])[::-1]
+	team1_name = data[4][7:].ljust(10, chr(0)).encode("cp437", "replace")
+	team2_name = data[5][7:].ljust(10, chr(0)).encode("cp437", "replace")
+	game_mode  = 1 if "tc" in data[6].lower() else 0
+	return (pack("<BBBBBBBBBB", pl_id, *fog, *team1_col[:3], *team2_col[:3]) + team1_name + team2_name 
+		+ pack("<B", game_mode) + GAME_STATEs[game_mode](data[7:]))
 packets[15] = StateData
 
 def KillAction(data):
