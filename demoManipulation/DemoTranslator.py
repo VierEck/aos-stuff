@@ -223,7 +223,7 @@ def CTFState(data):
 		x, y, z = unpack("fff", data[16:28])
 		info += "(pos2: " + f"{x:5.2f}" + ", " + f"{y:5.2f}" + ", " + f"{z:5.2f}" + ")"
 	x1, y1, z1, x2, y2, z2 = unpack("ffffff", data[28:52])
-	return ("(score1: " + str(data[0]) + ")(score2: " + str(data[1]) + ")(limit: " + str(data[2]) + info
+	return ("(score1: " + str(data[0]) + ")(score2: " + str(data[1]) + ")(limit: " + str(data[2]) + ")" + info
 		+ "(base1: " + f"{x1:5.2f}" + ", " + f"{y1:5.2f}" + ", " + f"{z1:5.2f}"
 		+ ")(base2: " + f"{x2:5.2f}" + ", " + f"{y2:5.2f}" + ", " + f"{z2:5.2f}" + ")")
 
