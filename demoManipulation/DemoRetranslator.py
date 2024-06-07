@@ -79,7 +79,7 @@ def Inputdata(data):
 		inp |= 0b00100000
 	if "sneak" in inp_str:
 		inp |= 0b01000000
-	if "spring" in inp_str:
+	if "sprint" in inp_str:
 		inp |= 0b10000000
 	return pack("<BB", get_nums(data[0])[0], inp)
 packets[3] = Inputdata
