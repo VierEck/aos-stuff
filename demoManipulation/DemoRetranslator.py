@@ -358,45 +358,53 @@ def retranslate(file_name):
 			time = float(0)
 			newTime = pkt_id = word = ""
 			data = []
+			is_bracket_txt = False
 			while True:
 				c = of.read(1)
 				if c == "":
 					print("done")
 					break
-				elif c == "[":
-					newTime = pkt_id = word = ""
-					data = []
-				elif c == "]" and pkt_id not in filter_packets:
-					try:
-						try:
-							data = packets[pkt_id](data)
-							if type(data) is bytes:
-								nf.write(pack("<fHB", newTime - time, len(data) + 1, pkt_id))
-								time = newTime
-								nf.write(data)
-						except KeyError:
-							print("packet id not recognised: " + str(pkt_id))
-					except Exception as e: #tell user where the mistake is in their (handwritten) demo txt
-						print("Exception near packet (timestamp): " + str(time))
-						print("                        packet id: " + str(pkt_id))
-						print(e)
-						return -4
-				elif type(newTime) is str:
-					if c.isdigit() or c == ".":
-						newTime += c
-					elif len(newTime) > 0:
-						newTime = float(newTime)
-				elif type(pkt_id) is str:
-					if c.isdigit():
-						pkt_id += c
-					elif len(pkt_id) > 0:
-						pkt_id = int(pkt_id)
-				elif c == "(":
-					word = ""
-				elif c == ")":
-					data.append(word)
 				else:
-					word += c
+					if is_bracket_txt:
+						word += c
+						is_bracket_txt = False
+					else:
+						if c == "\\":
+							is_bracket_txt = True
+						elif c == "[":
+							newTime = pkt_id = word = ""
+							data = []
+						elif c == "]" and pkt_id not in filter_packets:
+							try:
+								try:
+									data = packets[pkt_id](data)
+									if type(data) is bytes:
+										nf.write(pack("<fHB", newTime - time, len(data) + 1, pkt_id))
+										time = newTime
+										nf.write(data)
+								except KeyError:
+									print("packet id not recognised: " + str(pkt_id))
+							except Exception as e: #tell user where the mistake is in their (handwritten) demo txt
+								print("Exception near packet (timestamp): " + str(time))
+								print("                        packet id: " + str(pkt_id))
+								print(e)
+								return -4
+						elif type(newTime) is str:
+							if c.isdigit() or c == ".":
+								newTime += c
+							elif len(newTime) > 0:
+								newTime = float(newTime)
+						elif type(pkt_id) is str:
+							if c.isdigit():
+								pkt_id += c
+							elif len(pkt_id) > 0:
+								pkt_id = int(pkt_id)
+						elif c == "(":
+							word = ""
+						elif c == ")":
+							data.append(word)
+						else:
+							word += c
 			nf.close()
 		of.close()
 	return 0
