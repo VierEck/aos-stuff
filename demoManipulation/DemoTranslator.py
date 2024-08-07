@@ -422,10 +422,10 @@ def VersionResponse(data):
 packets[34] = VersionResponse
 
 def ProtocolExtension(data):
-	info = ""
-	i = 0
+	info = "(size: " + str(data[0]) + ")"
+	i = 1
 	while i + 1 < len(data):
-		info += "(" + str(data[i + 1]) + ", " + str(data[i]) + "); "
+		info += "(" + str(data[i]) + ", " + str(data[i + 1]) + "); "
 		i += 2
 	return ("60/ProtocolExtension: " + info)
 packets[60] = ProtocolExtension
