@@ -294,6 +294,10 @@ def WeaponReload(data):
 	return pack("<BBB", get_nums(data[0])[0], get_nums(data[1])[0], get_nums(data[2])[0])
 packets[28] = WeaponReload
 
+def ChangeTeam(data):
+	return pack("<BB", get_nums(data[0])[0], get_nums(data[1])[0])
+packets[29] = ChangeTeam
+
 def ChangeWeapon(data):
 	weap = 0
 	for k in WEAP_IDs.keys():
@@ -301,11 +305,7 @@ def ChangeWeapon(data):
 			weap = WEAP_IDs[k]
 			break
 	return pack("<BB", get_nums(data[0])[0], weap)
-packets[29] = ChangeWeapon
-
-def ChangeTeam(data):
-	return pack("<BB", get_nums(data[0])[0], get_nums(data[1])[0])
-packets[30] = ChangeTeam
+packets[30] = ChangeWeapon
 
 def HandshakeInit(data):
 	return pack("<I", get_nums(data[0])[0])
