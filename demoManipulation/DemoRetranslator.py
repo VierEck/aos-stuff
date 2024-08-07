@@ -135,7 +135,7 @@ def ExistingPlayer(data):
 			break
 	nums[4] = get_nums(data[4])[0]
 	nums.extend(get_nums(data[-2])[::-1])
-	return pack("<BBBBIBBB", *nums) + (data[-1][5:] + chr(0)).encode("cp437", "replace")
+	return pack("<BBBBIBBB", *nums) + (data[-1][6:] + chr(0)).encode("cp437", "replace")
 packets[9] = ExistingPlayer
 
 def ShortPlayer(data):
@@ -160,7 +160,7 @@ def CreatePlayer(data):
 			break
 	nums[2] = get_nums(data[2])[0]
 	nums.extend(get_nums(data[3]))
-	return pack("<BBBfff", *nums) + (data[-1][5:] + chr(0)).encode("cp437", "replace")
+	return pack("<BBBfff", *nums) + (data[-1][6:] + chr(0)).encode("cp437", "replace")
 packets[12] = CreatePlayer
 
 def BlockAction(data):
