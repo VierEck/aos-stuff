@@ -335,6 +335,14 @@ def VersionResponse(data):
 	return pack("<bbbb", client.encode("cp437", "replace"), *nums) + data[-1].encode("cp437", "replace")
 packets[34] = VersionResponse
 
+def ProtocolExtension(data):
+	b = pack("<B", get_nums(data[0])[-1])
+	i = 1
+	while i < len(data):
+		b += pack("<BB", *get_nums(data[i]))
+		i += 1
+	return b
+packets[60] = ProtocolExtension
 
 
 def retranslate(file_name):
