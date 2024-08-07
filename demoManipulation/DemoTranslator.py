@@ -421,6 +421,15 @@ def VersionResponse(data):
 		+ ")(ver: " + str(major) + "." + str(minor) + "." + str(rev1) + str(rev2) + ")(os: " + os_info + ")")
 packets[34] = VersionResponse
 
+def ProtocolExtension(data):
+	info = ""
+	i = 0
+	while i + 1 < len(data):
+		info += "(" + str(data[i + 1]) + ", " + str(data[i]) + "); "
+		i += 2
+	return ("60/ProtocolExtension: " + info)
+packets[60] = ProtocolExtension
+
 
 def translate(file_name):
 	with open(file_name, "rb") as of:
