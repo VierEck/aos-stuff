@@ -28,6 +28,14 @@ packets    = {}
 pkt_filter = [ 2, 3, 4, ]
 #recommended to filter worldupdate, inputdata and weapondata due to sheer amount of these packets in a demo.
 
+def format_string(s):
+	new_s = ""
+	for i in range(len(s)):
+		if s[i] in ("(", ")", "[", "]", "\\"):
+			new_s += "\\"
+		new_s += s[i]
+	return new_s
+
 
 def PositionData(data):
 	x, y, z = unpack("fff", data[0:12])
@@ -131,12 +139,7 @@ packets[8] = SetColor
 
 def ExistingPlayer(data):
 	pl_id = data[0]
-	decode_name_l = list(data[11:-1].decode("cp437", "replace"))
-	decode_name = []
-	for c in decode_name_l:
-		if c not in ("[", "]", "(", ")"):
-			decode_name.append(c)
-	decode_name = "".join(decode_name)
+	decode_name = format_string(data[11:-1].decode("cp437", "replace"))
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
@@ -165,12 +168,7 @@ packets[11] = MoveObject
 
 def CreatePlayer(data):
 	pl_id = data[0]
-	decode_name_l = list(data[15:-1].decode("cp437", "replace"))
-	decode_name = []
-	for c in decode_name_l:
-		if c not in ("[", "]", "(", ")"):
-			decode_name.append(c)
-	decode_name = "".join(decode_name)
+	decode_name = format_string(data[15:-1].decode("cp437", "replace"))
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
@@ -247,14 +245,8 @@ def StateData(data):
 	game_mode = "ctf"
 	if data[30] > 0:
 		game_mode = "tc"
-	team1_name_l = data[10:20].decode("cp437", "replace")
-	team2_name_l = data[20:30].decode("cp437", "replace")
-	team1_name = []
-	team2_name = []
-	for l in [[team1_name_l, team1_name], [team2_name_l, team2_name]]:
-		for c in l[0]:
-			if c not in ("[", "]", "(", ")"):
-				l[1].append(c)
+	team1_name = format_string(data[10:20].decode("cp437", "replace"))
+	team2_name = format_string(data[20:30].decode("cp437", "replace"))
 	return ("15/StateData        : (" + f"{pl_id:02d}" + pl_name
 		+ ")(fog: " + str(data[3]) + ", " + str(data[2]) + ", " +  str(data[1])
 		+ ")(team1: " + str(data[6]) + ", " + str(data[5]) + ", " +  str(data[4])
@@ -287,11 +279,7 @@ def ChatMessage(data):
 		chat_type = "team"
 	elif data[1] == 2:
 		chat_type = "sys"
-	msg_l = list(data[2:-1].decode("cp437", "replace"))
-	msg = []
-	for c in msg_l:
-		if c not in ("[", "]", "(", ")"):
-			msg.append(c)
+	msg = format_string(data[2:-1].decode("cp437", "replace"))
 	return ("17/ChatMessage      : (" + f"{pl_id:02d}" + pl_name + 
 		")(" + chat_type + ")(" + "".join(msg) + ")")
 packets[17] = ChatMessage
