@@ -388,7 +388,7 @@ def ChangeTeam(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return "28/ChangeTeam       : (" + f"{pl_id:02d}" + pl_name + ")(team: " + str(data[1]) + ")"
+	return "29/ChangeTeam       : (" + f"{pl_id:02d}" + pl_name + ")(team: " + str(data[1]) + ")"
 packets[29] = ChangeTeam
 
 def ChangeWeapon(data):
@@ -396,7 +396,7 @@ def ChangeWeapon(data):
 	pl_name = ""
 	if pl_id in players:
 		pl_name = ": " + players[pl_id]
-	return "29/ChangeWeapon     : (" + f"{pl_id:02d}" + pl_name + ")(weap: " + WEAP_IDs[data[1]] + ")"
+	return "30/ChangeWeapon     : (" + f"{pl_id:02d}" + pl_name + ")(weap: " + WEAP_IDs[data[1]] + ")"
 packets[30] = ChangeWeapon
 
 def HandshakeInit(data):
