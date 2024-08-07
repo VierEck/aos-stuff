@@ -425,7 +425,7 @@ def ProtocolExtension(data):
 	info = "(size: " + str(data[0]) + ")"
 	i = 1
 	while i + 1 < len(data):
-		info += "(" + str(data[i]) + ", " + str(data[i + 1]) + "); "
+		info += "(" + str(data[i]) + ", " + str(data[i + 1]) + ")"
 		i += 2
 	return ("60/ProtocolExtension: " + info)
 packets[60] = ProtocolExtension
