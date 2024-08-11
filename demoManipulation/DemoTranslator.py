@@ -420,11 +420,13 @@ packets[60] = ProtocolExtension
 
 
 def translate(file_name):
+	if not path.exists(file_name):
+		return "no such file exists"
 	with open(file_name, "rb") as of:
 		if of.read(1)[0] != AOS_REPLAY_VER:
-			return -1
+			return "wrong aos_replay version"
 		if of.read(1)[0] != AOS_PROTOCOL_VER:
-			return -2
+			return "wrong aos protocol version"
 		with open(file_name + ".txt", "w", encoding="cp437") as nf:
 			nf.write("demo translator version: " + str(TRANSLATOR_VER) + "\n")
 			nf.write("aos_replay version     : " + str(AOS_REPLAY_VER) + "\n")
@@ -435,7 +437,6 @@ def translate(file_name):
 				fmtlen = calcsize(fmt)
 				meta = of.read(fmtlen)
 				if len(meta) < fmtlen:
-					print("done")
 					break
 				dt, size = unpack(fmt, meta)
 				time += dt
@@ -453,7 +454,7 @@ def translate(file_name):
 				nf.write("]\n")
 			nf.close()
 		of.close()
-	return 0
+	return "task succesful"
 
 if __name__ == "__main__":
 	from os import path
@@ -463,11 +464,5 @@ if __name__ == "__main__":
 	parser.add_argument("file", help="File to read from")
 	args = parser.parse_args()
 	
-	if path.exists(args.file):
-		t = translate(args.file)
-		if t < -1:
-			print("wrong aos protocol version")
-		elif t < 0:
-			print("wrong aos_replay version")
-	else:
-		print("no such file exists")
+	print(translate(args.file))
+	
