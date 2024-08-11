@@ -14,9 +14,9 @@ Authors:
 from struct import unpack, calcsize
 
 
-AOS_PROTOCOL_VER = 3 #0.75
-AOS_REPLAY_VER   = 1
 TRANSLATOR_VER   = 0
+AOS_REPLAY_VER   = 1
+AOS_PROTOCOL_VER = 3 #0.75
 
 TOOL_IDs  = { 0: "spade", 1: "block", 2: "weap" , 3: "nade", }
 WEAP_IDs  = { 0: "semi" , 1: "smg"  , 2: "pump" , }
