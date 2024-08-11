@@ -14,9 +14,9 @@ Authors:
 from struct import pack
 
 
-AOS_PROTOCOL_VER = 3 #0.75
-AOS_REPLAY_VER   = 1
 TRANSLATOR_VER   = 0
+AOS_REPLAY_VER   = 1
+AOS_PROTOCOL_VER = 3 #0.75
 
 
 TOOL_IDs  = { "spade": 0, "block": 1, "weap" : 2, "nade": 3, }
@@ -346,13 +346,15 @@ packets[60] = ProtocolExtension
 
 
 def retranslate(file_name):
+	if not path.exists(file_name):
+		return "no such file exists"
 	with open(file_name, "r") as of:
 		if TRANSLATOR_VER != int(of.readline().split(":")[-1]):
-			return -1
+			return "wrong translator version"
 		if AOS_REPLAY_VER != int(of.readline().split(":")[-1]):
-			return -2
+			return "wrong aos_replay version"
 		if AOS_PROTOCOL_VER != int(of.readline().split(":")[-1]):
-			return -3
+			return "wrong aos protocol version"
 		with open(file_name + ".demo", "wb") as nf:
 			nf.write(pack("<BB", AOS_REPLAY_VER, AOS_PROTOCOL_VER))
 			time = float(0)
@@ -362,7 +364,6 @@ def retranslate(file_name):
 			while True:
 				c = of.read(1)
 				if c == "":
-					print("done")
 					break
 				else:
 					if is_bracket_txt:
@@ -385,10 +386,9 @@ def retranslate(file_name):
 								except KeyError:
 									print("packet id not recognised: " + str(pkt_id))
 							except Exception as e: #tell user where the mistake is in their (handwritten) demo txt
-								print("Exception near packet (timestamp): " + str(time))
-								print("                        packet id: " + str(pkt_id))
 								print(e)
-								return -4
+								return ("Exception near packet (timestamp): " + str(time) 
+									+ "\n                        packet id: " + str(pkt_id))
 						elif type(newTime) is str:
 							if c.isdigit() or c == ".":
 								newTime += c
@@ -407,7 +407,7 @@ def retranslate(file_name):
 							word += c
 			nf.close()
 		of.close()
-	return 0
+	return "task succesful"
 
 
 if __name__ == "__main__":
@@ -418,13 +418,5 @@ if __name__ == "__main__":
 	parser.add_argument("file", help="File to read from")
 	args = parser.parse_args()
 	
-	if path.exists(args.file):
-		t = retranslate(args.file)
-		if t == -1:
-			print("wrong translator version")
-		elif t == -2:
-			print("wrong aos_replay version")
-		elif t == -3:
-			print("wrong aos protocol version")
-	else:
-		print("no such file exists")
+	print(retranslate(args.file))
+	
