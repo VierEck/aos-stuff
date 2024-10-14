@@ -420,8 +420,6 @@ packets[60] = ProtocolExtension
 
 
 def translate(file_name):
-	if not path.exists(file_name):
-		return "no such file exists"
 	with open(file_name, "rb") as of:
 		if of.read(1)[0] != AOS_REPLAY_VER:
 			return "wrong aos_replay version"
@@ -464,5 +462,7 @@ if __name__ == "__main__":
 	parser.add_argument("file", help="File to read from")
 	args = parser.parse_args()
 	
-	print(translate(args.file))
-	
+	if path.exists(args.file):
+		print(translate(args.file))
+	else:
+		print("no such file exists")
