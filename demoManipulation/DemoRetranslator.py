@@ -346,8 +346,6 @@ packets[60] = ProtocolExtension
 
 
 def retranslate(file_name):
-	if not path.exists(file_name):
-		return "no such file exists"
 	with open(file_name, "r") as of:
 		if TRANSLATOR_VER != int(of.readline().split(":")[-1]):
 			return "wrong translator version"
@@ -418,5 +416,7 @@ if __name__ == "__main__":
 	parser.add_argument("file", help="File to read from")
 	args = parser.parse_args()
 	
-	print(retranslate(args.file))
-	
+	if path.exists(args.file):
+		print(retranslate(args.file))
+	else:
+		print("no such file exists")
