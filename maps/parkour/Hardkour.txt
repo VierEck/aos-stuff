@@ -30,7 +30,7 @@ if "parkour" in game_mode.get().lower():
 	names_to_check.append(join(config.config_dir, "game_modes/" + game_mode.get()))
 
 for script_name in names_to_check:
-	if not exists(name):
+	if not exists(script_name):
 		script_name += ".py"
 	if exists(script_name):
 		with open(script_name, "r") as f:
