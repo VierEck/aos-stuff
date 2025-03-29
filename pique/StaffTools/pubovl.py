@@ -10,7 +10,8 @@ Authors:
 
 from piqueserver.scheduler import Scheduler
 from piqueserver.commands import command, target_player
-from pyspades.contained import CreatePlayer, KillAction, PlayerLeft, WorldUpdate, OrientationData
+from pyspades.contained import CreatePlayer, KillAction, PlayerLeft, WorldUpdate, OrientationData, ExistingPlayer
+from pyspades.common import make_color
 
 
 def notification(c, msg):
@@ -112,22 +113,22 @@ def apply_script(pro, con, cfg):
 		def pubovl_spawn_dummy(c):
 			if c.pubovl_dummy_spawned:
 				return
-			clin_str = c.client_string.lower()
-			if "voxlap" in clin_str:
+			if "voxlap" in c.client_string.lower():
 				return #dummy doesnt work in voxlap
 			p = c.protocol
 			p.pubovl_update_dummy()
-			if p.pubovl_dummy_id > 31:
-				if "betterspades" not in clin_str or "iv of spades" not in clin_str:
-					return #only betterspades and iv of spades are (>32) compatible as of now :/
 			
-			create_pkt = CreatePlayer()
-			create_pkt.player_id = p.pubovl_dummy_id
-			create_pkt.name      = c.name
-			create_pkt.team      = c.team.id
-			create_pkt.weapon    = c.weapon
-			create_pkt.x, create_pkt.y, create_pkt.z = c.world_object.position.get()
-			c.send_contained(create_pkt)
+			#ExistingPlayer doesnt produce client side team join message
+			#ExistingPlayer also bypasses vanilla OpenSpade's max player detection!
+			exist_pkt = ExistingPlayer()
+			exist_pkt.player_id = p.pubovl_dummy_id
+			exist_pkt.name      = c.name
+			exist_pkt.team      = c.team.id
+			exist_pkt.weapon    = c.weapon
+			exist_pkt.tool      = c.tool or 0
+			exist_pkt.kills     = c.kills
+			exist_pkt.color     = make_color(*c.color)
+			c.send_contained(exist_pkt)
 			
 			c.pubovl_dummy_spawned = True
 			
@@ -203,10 +204,12 @@ def apply_script(pro, con, cfg):
 			return pro.broadcast_contained(p, pkt, unsequenced, sender, team, save, rule)
 		
 		def pubovl_update_dummy(p):
-			new_id = 0
-			for pl in p.connections.values():
-				if pl.player_id is not None and new_id == pl.player_id:
-					new_id += 1
+			new_id = p.max_players
+			try:
+				new_id = p.player_ids.pop()
+				p.player_ids.put_back(new_id)
+			except Exception: #cant import OutOfIDsException from pyspades.types :/
+				new_id = p.max_players
 			if new_id != p.pubovl_dummy_id:
 				for pl in p.connections.values():
 					if pl.pubovl_is_active:
