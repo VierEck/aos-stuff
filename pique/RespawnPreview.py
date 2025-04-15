@@ -27,6 +27,7 @@ MIN_RESPAWN_TIME    = respawn_preview_cfg.option("min_respawn_time", default=0.5
 
 def apply_script(pro, con, config_):
 	
+	
 	class RespawnPreview_C(con):
 		
 		def RespawnPreview_send_preview(c, pos) -> None:
@@ -52,5 +53,6 @@ def apply_script(pro, con, config_):
 						callLater(p_time, c.RespawnPreview_send_preview, pos)
 				c.spawn_call = callLater(r_time, c.spawn, pos)
 			return con.respawn(c)
+	
 	
 	return pro, RespawnPreview_C
