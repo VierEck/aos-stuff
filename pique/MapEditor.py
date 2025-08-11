@@ -44,7 +44,7 @@ todo:
 import enet
 from piqueserver.config import config
 from pyspades.bytes import ByteReader as reader, ByteWriter as writer
-from pyspades.packet import register_packet, register_packet_handler, _client_loaders, _server_loaders
+from pyspades.packet import register_packet, register_packet_handler
 from pyspades.loaders import Loader
 from pyspades import contained as loaders
 from piqueserver.scheduler import Scheduler
@@ -68,6 +68,8 @@ Destroy, Build, Paint, TextureBuild, TOOLTYPEMAX = range(5)
 DestroySpawn, SpawnTeam1, SpawnTeam2 = 3, 4, 5
 
 BUILDER_POSITION_RATE = 0.2
+
+is_old_pique_ver = False
 
 
 @command('max_volume', 'max_vol', admin_only=True)
@@ -568,22 +570,11 @@ def apply_script(protocol, connection, config):
 		builder_respawn = None
 		quick_switch = 1
 		
-		@register_packet_handler(loaders.ProtocolExtensionInfo)
-		def on_ext_info_received(c, contained: loaders.ProtocolExtensionInfo):
-			if MapEditorExtension not in contained.extensions:
-				c.disconnect(ERROR_WRONG_VERSION)
-				print("kicked %s. Client doesnt support our version of MapEditor. " % c.name)
-			return connection.on_ext_info_received(c, contained)
-		
-		@register_packet_handler(loaders.VersionResponse)
-		def on_version_info_recieved(self, contained: loaders.VersionResponse):
-			ext_info = loaders.ProtocolExtensionInfo()
-			ext_info.extensions = []
-			ext_info.extensions.append(MapEditorExtension)
-			self.send_contained(ext_info)
-			return connection.on_version_info_recieved(self, contained)
-		
 		def on_join(self):
+			if is_old_pique_ver:
+				ext_info = loaders.ProtocolExtensionInfo()
+				ext_info.extensions = [MapEditorExtension]
+				self.send_contained(ext_info)
 			if MapEditorExtension in self.proto_extensions:
 				has_MapEditor(self)
 			return connection.on_join(self)
@@ -673,6 +664,14 @@ def apply_script(protocol, connection, config):
 		max_build_volume = mapeditor_config.option('max_build_volume', 100000).get()
 		max_territories = mapeditor_config.option('max_territories', 128).get()
 		max_spawns = mapeditor_config.option('max_spawns', 128).get()
+		
+		def __init__(self, *arg, **kw):
+			protocol.__init__(self, *arg, **kw)
+			if hasattr(self, "available_proto_extensions"):
+				self.available_proto_extensions.append(MapEditorExtension)
+			else:
+				global is_old_pique_ver
+				is_old_pique_ver = True
 		
 		def update_network(self):
 			if not len(self.players):
