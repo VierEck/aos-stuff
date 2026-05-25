@@ -102,8 +102,9 @@ local function revert_pubovl_user(pid)
 	end
 end
 
+local dummy_owner_ruled_out = DUMMY_ID;
 local function broadcast_rule_dummy_owner(pid)
-	if (dummy_owners[pid]) then
+	if (dummy_owner_ruled_out == pid) then
 		return false;
 	end
 	return true;
@@ -123,6 +124,7 @@ function mod.send_packet(pid, data)
 					return mod.next.send_packet(pid, data_dummy);
 				end
 				if (pid < 0 or pid > MAX_PLAYERS - 1) then
+					dummy_owner_ruled_out = from;
 					lpu.broadcast(pid, data, broadcast_rule_dummy_owner);
 					return send_packet(from, data_dummy);
 				end
