@@ -2,8 +2,9 @@
 pubovl
 
 secretly join spectator to observe players without them knowing. 
-based on the secret spectator feature of topo's ovl. 
 also includes limbo spectating. 
+based on the secret spectator feature of topo's ovl. 
+some code is based on other parts of the lsd project by notaburner. 
 
 
 VierEck.

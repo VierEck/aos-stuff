@@ -5,6 +5,7 @@ functions to generate strings containing packet data to be sent via the
 send_packet and send_packet_unreliable api functions. 
 broadcast functions with callable parameter for customizable rules wether to 
 send packet to player. broadcast functions dont have invalid pid checks. 
+some code is based on other parts of the lsd project by notaburner. 
 
 
 VierEck.
