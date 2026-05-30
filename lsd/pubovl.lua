@@ -161,15 +161,7 @@ end
 local cmd = {name="pubovl", caps="pubovl", fakepid=true, usage="[player]", desc="secretly become spectator. "};
 function cmd.func(pid, argv)
 	cmd_assert(pid, cmd, #argv <= 1);
-	local target_pid = pid;
-	
-	if (argv[1]) then
-		if (not has_cap(pid, "pubovl")) then
-			l10n_send_chat(pid, need_cap_msg, {cap="pubovl"});
-			return;
-		end
-		target_pid = get_arg_pid("player", pid, cmd, argv[1]);
-	end
+	local target_pid = get_arg_pid_opt("player", pid, cmd, argv[1]) or pid;
 	
 	if (is_fakepid(target_pid)) then
 		-- player was not specified and running pid is a fakepid, that's illegal
