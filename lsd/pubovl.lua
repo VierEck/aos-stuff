@@ -158,7 +158,7 @@ function mod.finish_map_load()
 end
 
 
-local cmd = {name="pubovl", fakepid=true, usage="[player]", desc="secretly become spectator. "};
+local cmd = {name="pubovl", caps="pubovl", fakepid=true, usage="[player]", desc="secretly become spectator. "};
 function cmd.func(pid, argv)
 	cmd_assert(pid, cmd, #argv <= 1);
 	local target_pid = pid;
