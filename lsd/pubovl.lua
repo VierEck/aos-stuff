@@ -16,6 +16,7 @@ local lpu = lib_packet_unsafe;
 local DUMMY_ID = MAX_PLAYERS;
 local pubovl_users = pid_joined_table(nil);
 local dummy_owners = pid_joined_table(nil);
+local dummy_owners_count = 0;
 
 local console_no_player_msg = {
 	en="You can't give yourself pubovl unless you're in-game.",
@@ -41,30 +42,25 @@ local function create_dummy(pid)
 		)
 	);
 	
-	local pos_t = {};
-	local ori_t = {};
-	for i=0, MAX_PLAYERS - 1 do
-		if (is_alive(i)) then
-			pos_t[i] = get_position(i);
-			ori_t[i] = get_orientation(i);
-		end
-	end
-	pos_t[DUMMY_ID] = get_position(pid);
-	ori_t[DUMMY_ID] = get_orientation(pid);
-	send_packet(pid, lpu.str_player_update(pos_t, ori_t, DUMMY_ID + 1));
-	
 	dummy_owners[pid] = true;
+	if (dummy_owners_count < 0) then
+		dummy_owners_count = 0;
+	end
+	dummy_owners_count = dummy_owners_count + 1;
 end
 
 local function remove_dummy(pid)
 	if (dummy_owners[pid]) then
 		dummy_owners[pid] = false;
+		dummy_owners_count = dummy_owners_count - 1;
+		if (dummy_owners_count < 0) then
+			dummy_owners_count = 0;
+		end
 		if (lpu) then
 			send_packet(pid, lpu.str_disconnect(DUMMY_ID));
 		end
 	end
 end
-
 
 local function become_pubovl_user(pid)
 	pubovl_users[pid] = true;
@@ -103,35 +99,56 @@ local function revert_pubovl_user(pid)
 	end
 end
 
-local dummy_owner_ruled_out = DUMMY_ID;
-local function broadcast_rule_dummy_owner(pid)
-	if (dummy_owner_ruled_out == pid) then
-		return false;
+function mod.send_spawn_player(pid, pos, gun, team, name, from)
+	if (not lpu or not dummy_owners[from] or dummy_owners_count <= 0) then
+		return mod.next.send_spawn_player(pid, pos, gun, team, name, from)
 	end
-	return true;
-end
-
-
-function mod.send_packet(pid, data)
-	if (lpu) then
-		--is this slow? is there any better way?
-		local pkt_id = string.byte(data, 1);
-		if (pkt_id == 12 or pkt_id == 16) then
-			local from = string.byte(string.sub(data, 2, 2));
-			if (dummy_owners[from]) then
-				local data_dummy = string.char(pkt_id, DUMMY_ID) .. string.sub(data, 3);
-				if (from == pid) then
-					return mod.next.send_packet(pid, data_dummy);
-				end
-				if (pid < 0 or pid > MAX_PLAYERS - 1) then
-					dummy_owner_ruled_out = from;
-					lpu.broadcast(pid, data, broadcast_rule_dummy_owner);
-					return send_packet(from, data_dummy);
-				end
-			end
+	
+	for i in piditer(pid) do
+		if (i == from) then
+			send_packet(i, lpu.str_spawn_player(pos.x, pos.y, pos.z, gun, team, name, DUMMY_ID));
+		else
+			mod.next.send_spawn_player(i, pos, gun, team, name, from);
 		end
 	end
-	return mod.next.send_packet(pid, data);
+end
+
+function mod.send_kill(pid, spawndelta, type_, killer, from)
+	if (not lpu or not dummy_owners[from] or dummy_owners_count <= 0) then
+		return mod.next.send_kill(pid, spawndelta, type_, killer, from);
+	end
+	
+	for i in piditer(pid) do
+		if (i == from) then
+			send_packet(i, lpu.str_kill(spawndelta, type_, killer, DUMMY_ID));
+		else
+			mod.next.send_kill(i, spawndelta, type_, killer, from);
+		end
+	end
+end
+
+function mod.send_player_update(pid)
+	if (not lpu or dummy_owners_count <= 0) then
+		return mod.next.send_player_update(pid)
+	end
+	
+	local pos_t = {};
+	local ori_t = {};
+	for i=0, MAX_PLAYERS - 1 do
+		if (is_alive(i)) then
+			pos_t[i] = get_position(i);
+			ori_t[i] = get_orientation(i);
+		end
+	end
+	for i in piditer(pid) do
+		if (dummy_owners[i]) then
+			pos_t[DUMMY_ID] = get_position(i);
+			ori_t[DUMMY_ID] = get_orientation(i);
+			send_packet(i, lpu.str_player_update(pos_t, ori_t, DUMMY_ID + 1));
+		else
+			mod.next.send_player_update(i)
+		end
+	end
 end
 
 function mod.on_join(pid, team, gun, name)
