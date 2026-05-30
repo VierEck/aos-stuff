@@ -36,7 +36,7 @@ local function create_dummy(pid)
 	send_packet(
 		pid, 
 		lpu.str_existing_player(
-			get_team(pid), get_gun(pid), get_tool(pid), get_score(pid), 
+			get_team(pid) - 1, get_gun(pid), get_tool(pid), get_score(pid), 
 			block_col.r, block_col.g, block_col.b, get_name(pid), DUMMY_ID
 		)
 	);
