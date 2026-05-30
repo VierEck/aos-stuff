@@ -18,12 +18,12 @@ local pubovl_users = pid_joined_table(nil);
 local dummy_owners = pid_joined_table(nil);
 
 local console_no_player_msg = {
-	en="You can't give yourself pubovl unless you're in-game. ",
-	de="Um pubovl zu nutzen muessen Sie dem Server beigetreten sein. "
+	en="You can't give yourself pubovl unless you're in-game.",
+	de="Um pubovl zu nutzen muessen Sie dem Server beigetreten sein."
 };
 local need_cap_msg = {
-	en="You need the %(cap) capability to use pubovl. ",
-	de="Sie brauchen %(cap) Zulassung um pubovl zu nutzen. "
+	en="You need the %(cap) capability to use pubovl.",
+	de="Sie brauchen %(cap) Zulassung um pubovl zu nutzen."
 };
 
 
@@ -115,12 +115,11 @@ end
 function mod.send_packet(pid, data)
 	if (lpu) then
 		--is this slow? is there any better way?
-		local pkt_id_str = string.sub(data, 1, 1);
-		local pkt_id = tonumber(string.byte(pkt_id_str));
+		local pkt_id = string.byte(data, 1);
 		if (pkt_id == 12 or pkt_id == 16) then
-			local from = tonumber(string.byte(string.sub(data, 2, 2)));
+			local from = string.byte(string.sub(data, 2, 2));
 			if (dummy_owners[from]) then
-				local data_dummy = pkt_id_str .. string.char(DUMMY_ID) .. string.sub(data, 3);
+				local data_dummy = string.sub(data, 1) .. string.char(DUMMY_ID) .. string.sub(data, 3);
 				if (from == pid) then
 					return mod.next.send_packet(pid, data_dummy);
 				end
@@ -158,7 +157,7 @@ function mod.finish_map_load()
 end
 
 
-local cmd = {name="pubovl", caps="pubovl", fakepid=true, usage="[player]", desc="secretly become spectator. "};
+local cmd = {name="pubovl", caps="pubovl", fakepid=true, usage="[player]", desc="Secretly become spectator."};
 function cmd.func(pid, argv)
 	cmd_assert(pid, cmd, #argv <= 1);
 	local target_pid = get_arg_pid_opt("player", pid, cmd, argv[1]) or pid;
