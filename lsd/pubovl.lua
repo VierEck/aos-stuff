@@ -119,7 +119,7 @@ function mod.send_packet(pid, data)
 		if (pkt_id == 12 or pkt_id == 16) then
 			local from = string.byte(string.sub(data, 2, 2));
 			if (dummy_owners[from]) then
-				local data_dummy = string.sub(data, 1) .. string.char(DUMMY_ID) .. string.sub(data, 3);
+				local data_dummy = string.char(pkt_id, DUMMY_ID) .. string.sub(data, 3);
 				if (from == pid) then
 					return mod.next.send_packet(pid, data_dummy);
 				end
