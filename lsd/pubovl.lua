@@ -35,9 +35,9 @@ local function create_dummy(pid)
 	local block_col = get_block_color(pid);
 	send_packet(
 		pid, 
-		lpu.str_existing_player( --TODO: when player score is added to the api, send the correct score here
-			get_team(pid), get_gun(pid), get_tool(pid), --[[score]]0, 
-			block_col[0], block_col[1], block_col[2], get_name(pid), DUMMY_ID
+		lpu.str_existing_player(
+			get_team(pid), get_gun(pid), get_tool(pid), get_score(pid), 
+			block_col.r, block_col.g, block_col.b, get_name(pid), DUMMY_ID
 		)
 	);
 	
@@ -45,8 +45,8 @@ local function create_dummy(pid)
 	local ori_t = {};
 	for i=0, MAX_PLAYERS - 1 do
 		if (is_alive(i)) then
-			pos_t[i] = get_position(i)
-			ori_t[i] = get_position(i)
+			pos_t[i] = get_position(i);
+			ori_t[i] = get_orientation(i);
 		end
 	end
 	pos_t[DUMMY_ID] = get_position(pid);
@@ -175,7 +175,7 @@ function cmd.func(pid, argv)
 		become_pubovl_user(target_pid);
 	end
 end
-register_command(cmd);
+register_command(cmd, mod);
 
 
 return mod;
