@@ -27,6 +27,10 @@ local need_cap_msg = {
 	en="You need the %(cap) capability to use pubovl.",
 	de="Sie brauchen %(cap) Zulassung um pubovl zu nutzen."
 };
+local spec_no_pubovl_msg = {
+	en="Spectators don't need pubovl.",
+	de="Zuschauer brauchen kein pubovl."
+};
 
 
 local function create_dummy(pid)
@@ -92,7 +96,7 @@ local function update_voxlap_dummy()
 	end
 	voxlap_dummy_id = new_voxlap_dummy_id;
 	
-	if (voxlap_dummy_id < MAX_PLAYERS)
+	if (voxlap_dummy_id < MAX_PLAYERS) then
 		for i, useless in pairs(voxlap_dummy_owners) do
 			create_dummy(i);
 		end
@@ -100,6 +104,9 @@ local function update_voxlap_dummy()
 end
 
 local function become_pubovl_user(pid)
+	if (get_team(pid) == SPECTATOR) then
+		return; --spectators dont need pubovl
+	end
 	pubovl_users[pid] = true;
 	if (is_joined(pid)) then
 		send_spawn_player(pid, get_position(pid), get_gun(pid), SPECTATOR, get_name(pid), pid);
@@ -243,6 +250,11 @@ function cmd.func(pid, argv)
 		send_usage(pid, cmd);
 		l10n_send_chat(pid, console_no_player_msg);
 		return;
+	end
+	
+	if (get_team(target_pid) == SPECTATOR) then
+		l10n_send_chat(pid, spec_no_pubovl_msg);
+		return; 
 	end
 	
 	if (pubovl_users[target_pid]) then
