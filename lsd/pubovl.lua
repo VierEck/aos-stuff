@@ -13,9 +13,10 @@ VierEck.
 
 local mod = init_mod();
 local lpu = lib_packet_unsafe;
-local DUMMY_ID = MAX_PLAYERS;
+local OSBS_DUMMY_ID = MAX_PLAYERS;
+local voxlap_dummy_id = 0;
 local pubovl_users = pid_joined_table(nil);
-local dummy_owners = pid_joined_table(nil);
+local dummy_owners = pid_joined_table(nil); --if owner, contains their dummy id
 local dummy_owners_count = 0;
 
 local console_no_player_msg = {
@@ -29,20 +30,34 @@ local need_cap_msg = {
 
 
 local function create_dummy(pid)
-	if (not get_client_char(pid) or not lpu) then
-		return; --user probably on voxlap. voxlap is too dumb for the dummy
+	if (not lpu) then
+		return;
 	end
 	
-	local block_col = get_block_color(pid);
-	send_packet(
-		pid, 
-		lpu.str_existing_player(
-			get_team(pid) - 1, get_gun(pid), get_tool(pid), get_score(pid), 
-			block_col.r, block_col.g, block_col.b, get_name(pid), DUMMY_ID
-		)
-	);
+	if (not get_client_char(pid)) then
+		if (voxlap_dummy_id >= MAX_PLAYERS) then
+			return; --voxlap cant handle pid outside the valid pool.
+		end
+		dummy_owners[pid] = voxlap_dummy_id;
+		
+		send_spawn_player(
+			pid, get_position(pid), get_gun(pid), get_team(pid), get_name(pid), dummy_owners[pid]
+		);
+	else
+		--lets assume every client other than voxlap can handle pid outside the valid pool.
+		--which they should if they want to be good clients.
+		dummy_owners[pid] = OSBS_DUMMY_ID;
+		
+		local block_col = get_block_color(pid);
+		send_packet(
+			pid, 
+			lpu.str_existing_player(
+				get_team(pid) - 1, get_gun(pid), get_tool(pid), get_score(pid), 
+				block_col.r, block_col.g, block_col.b, get_name(pid), dummy_owners[pid]
+			)
+		);
+	end
 	
-	dummy_owners[pid] = true;
 	if (dummy_owners_count < 0) then
 		dummy_owners_count = 0;
 	end
@@ -51,13 +66,35 @@ end
 
 local function remove_dummy(pid)
 	if (dummy_owners[pid]) then
-		dummy_owners[pid] = false;
 		dummy_owners_count = dummy_owners_count - 1;
 		if (dummy_owners_count < 0) then
 			dummy_owners_count = 0;
 		end
+		
 		if (lpu) then
-			send_packet(pid, lpu.str_disconnect(DUMMY_ID));
+			send_packet(pid, lpu.str_disconnect(dummy_owners[pid]));
+		end
+		dummy_owners[pid] = false;
+	end
+end
+
+local function update_voxlap_dummy()
+	local voxlap_dummy_owners = {};
+	local new_voxlap_dummy_id = 0;
+	for i in piditer(PID_BROADCAST) do
+		if (new_voxlap_dummy_id == i) then
+			new_voxlap_dummy_id = new_voxlap_dummy_id + 1;
+		end
+		if (dummy_owners[i] and dummy_owners[i] ~= OSBS_DUMMY_ID) then
+			voxlap_dummy_owners[i] = true;
+			remove_dummy(i);
+		end
+	end
+	voxlap_dummy_id = new_voxlap_dummy_id;
+	
+	if (voxlap_dummy_id < MAX_PLAYERS)
+		for i, useless in pairs(voxlap_dummy_owners) do
+			create_dummy(i);
 		end
 	end
 end
@@ -101,12 +138,12 @@ end
 
 function mod.send_spawn_player(pid, pos, gun, team, name, from)
 	if (not lpu or not dummy_owners[from] or dummy_owners_count <= 0) then
-		return mod.next.send_spawn_player(pid, pos, gun, team, name, from)
+		return mod.next.send_spawn_player(pid, pos, gun, team, name, from);
 	end
 	
 	for i in piditer(pid) do
 		if (i == from) then
-			send_packet(i, lpu.str_spawn_player(pos.x, pos.y, pos.z, gun, team, name, DUMMY_ID));
+			send_packet(i, lpu.str_spawn_player(pos.x, pos.y, pos.z, gun, team, name, dummy_owners[pid]));
 		else
 			mod.next.send_spawn_player(i, pos, gun, team, name, from);
 		end
@@ -120,16 +157,30 @@ function mod.send_kill(pid, spawndelta, type_, killer, from)
 	
 	for i in piditer(pid) do
 		if (i == from) then
-			send_packet(i, lpu.str_kill(spawndelta, type_, killer, DUMMY_ID));
+			send_packet(i, lpu.str_kill(spawndelta, type_, killer, dummy_owners[pid]));
 		else
 			mod.next.send_kill(i, spawndelta, type_, killer, from);
 		end
 	end
 end
 
+function mod.send_move_input(pid, inputs, from)
+	if (not lpu or not dummy_owners[from] or dummy_owners_count <= 0) then
+		return mod.next.send_move_input(pid, inputs, from);
+	end
+	
+	for i in piditer(pid) do
+		if (i == from) then
+			send_packet(i, lpu.str_move_input(inputs, dummy_owners[pid]));
+		else
+			mod.next.send_move_input(pid, inputs, from);
+		end
+	end
+end
+
 function mod.send_player_update(pid)
 	if (not lpu or dummy_owners_count <= 0) then
-		return mod.next.send_player_update(pid)
+		return mod.next.send_player_update(pid);
 	end
 	
 	local pos_t = {};
@@ -142,13 +193,21 @@ function mod.send_player_update(pid)
 	end
 	for i in piditer(pid) do
 		if (dummy_owners[i]) then
-			pos_t[DUMMY_ID] = get_position(i);
-			ori_t[DUMMY_ID] = get_orientation(i);
-			send_packet(i, lpu.str_player_update(pos_t, ori_t, DUMMY_ID + 1));
+			local dodi = dummy_owners[i];
+			pos_t[dodi] = get_position(i);
+			ori_t[dodi] = get_orientation(i);
+			send_packet(i, lpu.str_player_update(pos_t, ori_t, dodi + 1));
 		else
-			mod.next.send_player_update(i)
+			mod.next.send_player_update(i);
 		end
 	end
+end
+
+function mod.demand_fingerprint(pid)
+	if (voxlap_dummy_id == pid) then
+		update_voxlap_dummy();
+	end
+	return mod.next.demand_fingerprint(pid);
 end
 
 function mod.on_join(pid, team, gun, name)
